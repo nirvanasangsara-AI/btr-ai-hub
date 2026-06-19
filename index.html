@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTR AI Hub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1729;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f6c90e;
+      margin-bottom: 8px;
+      letter-spacing: .02em;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: .75rem;
+      color: #64748b;
+      margin-bottom: 28px;
+    }
+    /* ── 섹션 ── */
+    .section-label {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #475569;
+      margin: 20px 0 10px;
+    }
+    /* ── 서비스 그리드 ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: #1e2d45;
+      border: 1px solid #2d3f58;
+      border-radius: 14px;
+      padding: 14px 14px 10px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color .15s, transform .12s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover { border-color: #4ade80; transform: translateY(-2px); }
+    .card-top { display: flex; align-items: center; gap: 8px; }
+    .card-icon { font-size: 1.25rem; line-height: 1; }
+    .card-name { font-size: .85rem; font-weight: 600; color: #e2e8f0; }
+    .live-dot {
+      position: absolute; top: 10px; right: 10px;
+      width: 8px; height: 8px; border-radius: 50%; background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: .4; }
+    }
+    /* 스파크라인 */
+    .sparkline {
+      height: 28px; width: 100%;
+      display: flex; align-items: flex-end; gap: 2px;
+    }
+    .spark-bar {
+      flex: 1; background: #4ade80; border-radius: 2px 2px 0 0; opacity: .6;
+      min-height: 3px;
+    }
+
+    /* ── 비용 섹션 ── */
+    .cost-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .cost-card {
+      background: #1e2d45;
+      border: 1px solid #2d3f58;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cost-card-top { display: flex; justify-content: space-between; align-items: center; }
+    .cost-provider { font-size: .75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; }
+    .cost-amount { font-size: 1.3rem; font-weight: 700; color: #f8fafc; }
+    .cost-amount.loading { color: #475569; font-size: .8rem; animation: blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .cost-period { font-size: .68rem; color: #475569; }
+    .cost-link {
+      font-size: .68rem; color: #4ade80; text-decoration: none; margin-top: 4px;
+      display: inline-flex; align-items: center; gap: 3px;
+    }
+    .cost-link:hover { text-decoration: underline; }
+    .cost-badge {
+      font-size: .6rem; font-weight: 600; padding: 2px 6px; border-radius: 999px;
+      background: #164e63; color: #67e8f9;
+    }
+    .cost-badge.api { background: #14532d; color: #86efac; }
+    .cost-badge.sub { background: #3b0764; color: #d8b4fe; }
+
+    /* 이달 합계 */
+    .total-bar {
+      background: #1e2d45;
+      border: 1px solid #f6c90e44;
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .total-label { font-size: .8rem; color: #94a3b8; }
+    .total-amount { font-size: 1.4rem; font-weight: 700; color: #f6c90e; }
+
+    footer { text-align: center; color: #334155; font-size: .68rem; margin-top: 32px; }
+    .max-w { max-width: 700px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+<div class="max-w">
+  <h1>BTR AI Hub</h1>
+  <p class="subtitle" id="last-updated">마지막 업데이트: 불러오는 중…</p>
+
+  <!-- ── 서비스 링크 ── -->
+  <div class="section-label">🚀 서비스</div>
+  <div class="grid">
+    <a class="card" href="https://btr-sales-v2.pages.dev" target="_blank">
+      <div class="live-dot"></div>
+      <div class="card-top"><span class="card-icon">📊</span><span class="card-name">SalesSync2</span></div>
+      <div class="sparkline" id="spark-0"></div>
+    </a>
+    <a class="card" href="https://btr-elevator-dashboard.nirvana-sangsara.workers.dev" target="_blank">
+      <div class="live-dot"></div>
+      <div class="card-top"><span class="card-icon">🏢</span><span class="card-name">승강기설치현황</span></div>
+      <div class="sparkline" id="spark-1"></div>
+    </a>
+    <a class="card" href="https://elevator-industry-network-atlas.pages.dev" target="_blank">
+      <div class="live-dot"></div>
+      <div class="card-top"><span class="card-icon">🌐</span><span class="card-name">Atlas</span></div>
+      <div class="sparkline" id="spark-2"></div>
+    </a>
+    <a class="card" href="https://elevator-as-pro.vercel.app" target="_blank">
+      <div class="live-dot"></div>
+      <div class="card-top"><span class="card-icon">🔧</span><span class="card-name">AS Pro</span></div>
+      <div class="sparkline" id="spark-3"></div>
+    </a>
+    <a class="card" href="https://btr-web-production.up.railway.app" target="_blank">
+      <div class="live-dot"></div>
+      <div class="card-top"><span class="card-icon">🔔</span><span class="card-name">승강기입찰정보</span></div>
+      <div class="sparkline" id="spark-4"></div>
+    </a>
+    <a class="card" href="https://btraicertification-production.up.railway.app" target="_blank">
+      <div class="live-dot"></div>
+      <div class="card-top"><span class="card-icon">📋</span><span class="card-name">AI 인증검토</span></div>
+      <div class="sparkline" id="spark-5"></div>
+    </a>
+  </div>
+
+  <!-- ── API 비용 대시보드 ── -->
+  <div class="section-label">💳 이달 API·구독 비용</div>
+  <div class="cost-grid">
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">Claude</span>
+        <span class="cost-badge api">API</span>
+      </div>
+      <div class="cost-amount" id="cost-claude">—</div>
+      <div class="cost-period" id="period-claude">이달 누적</div>
+      <a class="cost-link" href="https://console.anthropic.com/settings/usage" target="_blank">↗ 대시보드</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">OpenAI</span>
+        <span class="cost-badge api">API</span>
+      </div>
+      <div class="cost-amount" id="cost-openai">—</div>
+      <div class="cost-period">이달 누적</div>
+      <a class="cost-link" href="https://platform.openai.com/settings/organization/billing/overview" target="_blank">↗ 대시보드</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">Gemini</span>
+        <span class="cost-badge api">API</span>
+      </div>
+      <div class="cost-amount" id="cost-gemini">—</div>
+      <div class="cost-period">이달 누적</div>
+      <a class="cost-link" href="https://console.cloud.google.com/billing" target="_blank">↗ 대시보드</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">Perplexity</span>
+        <span class="cost-badge api">API</span>
+      </div>
+      <div class="cost-amount" id="cost-perplexity">—</div>
+      <div class="cost-period">이달 누적</div>
+      <a class="cost-link" href="https://www.perplexity.ai/settings/api" target="_blank">↗ 대시보드</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">Vercel</span>
+        <span class="cost-badge sub">구독</span>
+      </div>
+      <div class="cost-amount" id="cost-vercel">—</div>
+      <div class="cost-period">이달 요금</div>
+      <a class="cost-link" href="https://vercel.com/dashboard/usage" target="_blank">↗ 대시보드</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">Cloudflare</span>
+        <span class="cost-badge sub">구독</span>
+      </div>
+      <div class="cost-amount" id="cost-cf">—</div>
+      <div class="cost-period">이달 요금</div>
+      <a class="cost-link" href="https://dash.cloudflare.com/?to=/:account/billing" target="_blank">↗ 대시보드</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">Railway</span>
+        <span class="cost-badge sub">구독</span>
+      </div>
+      <div class="cost-amount" id="cost-railway">—</div>
+      <div class="cost-period">이달 요금</div>
+      <a class="cost-link" href="https://railway.app/dashboard" target="_blank">↗ 대시보드</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">Claude Pro</span>
+        <span class="cost-badge sub">구독</span>
+      </div>
+      <div class="cost-amount">$20</div>
+      <div class="cost-period">월정액 고정</div>
+      <a class="cost-link" href="https://claude.ai/settings" target="_blank">↗ 설정</a>
+    </div>
+
+    <div class="cost-card">
+      <div class="cost-card-top">
+        <span class="cost-provider">ChatGPT</span>
+        <span class="cost-badge sub">구독</span>
+      </div>
+      <div class="cost-amount" id="cost-gpt">—</div>
+      <div class="cost-period">플랜 확인</div>
+      <a class="cost-link" href="https://platform.openai.com/settings/organization/billing/overview" target="_blank">↗ 대시보드</a>
+    </div>
+
+  </div>
+
+  <!-- 합계 -->
+  <div class="total-bar">
+    <div>
+      <div class="total-label">이달 확인된 API 비용 합계</div>
+      <div style="font-size:.65rem;color:#475569;margin-top:2px">API 자동조회 가능한 항목만 · 구독료 별도</div>
+    </div>
+    <div class="total-amount" id="total-cost">계산 중…</div>
+  </div>
+
+  <footer>BTR 수성 · <span id="year"></span></footer>
+</div>
+
+<script>
+// ── 스파크라인 렌더 (localStorage KV fallback) ──────────────────────
+const SPARK_KEY = 'btr_hub_clicks_v2';
+function getClickData() {
+  try { return JSON.parse(localStorage.getItem(SPARK_KEY) || '{}'); } catch { return {}; }
+}
+function renderSparks() {
+  const data = getClickData();
+  const today = new Date().toISOString().slice(0,10);
+  for (let i = 0; i < 6; i++) {
+    const el = document.getElementById('spark-' + i);
+    if (!el) continue;
+    const key = 'svc_' + i;
+    const raw = data[key] || {};
+    const days = [];
+    for (let d = 7; d >= 0; d--) {
+      const dt = new Date(Date.now() - d * 86400000).toISOString().slice(0,10);
+      days.push(raw[dt] || 0);
+    }
+    const max = Math.max(...days, 1);
+    el.innerHTML = days.map(v => {
+      const h = Math.round((v / max) * 24) + 4;
+      return `<div class="spark-bar" style="height:${h}px;opacity:${v>0?0.8:0.2}"></div>`;
+    }).join('');
+  }
+}
+// 카드 클릭 시 카운트
+document.querySelectorAll('.card').forEach((card, i) => {
+  card.addEventListener('click', () => {
+    const data = getClickData();
+    const key = 'svc_' + i;
+    if (!data[key]) data[key] = {};
+    const today = new Date().toISOString().slice(0,10);
+    data[key][today] = (data[key][today] || 0) + 1;
+    localStorage.setItem(SPARK_KEY, JSON.stringify(data));
+  });
+});
+renderSparks();
+
+// ── 비용 조회 (Vercel — 토큰 있으면 API, 없으면 —) ──────────────────
+async function loadVercelCost() {
+  try {
+    const r = await fetch('/api/costs?provider=vercel');
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.amount != null) document.getElementById('cost-vercel').textContent = '$' + d.amount.toFixed(2);
+  } catch {}
+}
+
+// ── 날짜 ──────────────────────────────────────────────────────────
+const now = new Date();
+document.getElementById('year').textContent = now.getFullYear();
+document.getElementById('last-updated').textContent =
+  '마지막 열람: ' + now.toLocaleDateString('ko-KR') + ' ' + now.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
+
+// ── 수동 입력 안내 ─────────────────────────────────────────────────
+// API로 자동 조회 안 되는 항목은 — 표시 유지, 링크로 직접 확인
+document.getElementById('total-cost').textContent = '↗ 각 링크 확인';
+
+// 연도
+document.querySelectorAll('[id^="cost-"]').forEach(el => {
+  if (el.textContent === '—') el.style.color = '#475569';
+});
+
+loadVercelCost();
+</script>
+</body>
+</html>
