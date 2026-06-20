@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BTR Hub — Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.header{padding:20px 24px;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:12px}
+.back{color:#64748b;text-decoration:none;font-size:.85rem}
+.back:hover{color:#94a3b8}
+h1{font-size:1rem;font-weight:700;color:#fff}
+
+/* 로그인 */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:80vh}
+.login-box{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:32px;width:320px;text-align:center}
+.login-box h2{font-size:1rem;margin-bottom:20px;color:#f1f5f9}
+.login-box input{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px;color:#f1f5f9;font-size:.9rem;margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:#4ade80}
+.login-box button{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:10px;font-size:.9rem;cursor:pointer;font-weight:600}
+.login-box button:hover{background:#2563eb}
+.login-err{color:#f87171;font-size:.8rem;margin-top:8px;display:none}
+
+/* 어드민 패널 */
+#admin-screen{display:none;padding:24px;max-width:720px;margin:0 auto}
+.section-title{font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin:24px 0 12px}
+.service-row{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.service-icon{font-size:1.2rem;width:28px;text-align:center;flex-shrink:0}
+.service-info{flex:1}
+.service-name{font-size:.9rem;font-weight:600;color:#f1f5f9}
+.service-url{font-size:.72rem;color:#475569;margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#334155;border-radius:99px;cursor:pointer;transition:.2s}
+.slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#94a3b8;border-radius:50%;transition:.2s}
+input:checked+.slider{background:#16a34a}
+input:checked+.slider:before{transform:translateX(20px);background:#fff}
+.save-btn{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:12px;font-size:.9rem;cursor:pointer;font-weight:600;margin-top:20px}
+.save-btn:hover{background:#2563eb}
+.save-btn:disabled{background:#1e3a5f;cursor:not-allowed}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:10px 20px;border-radius:8px;font-size:.85rem;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+.logout{font-size:.75rem;color:#475569;background:none;border:none;cursor:pointer;margin-left:auto}
+.logout:hover{color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/" class="back">← 허브로</a>
+  <h1>⚙️ Admin</h1>
+  <button class="logout" id="logout-btn" style="display:none">로그아웃</button>
+</div>
+
+<div id="login-screen">
+  <div class="login-box">
+    <h2>🔒 관리자 로그인</h2>
+    <input type="password" id="pw-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">로그인</button>
+    <div class="login-err" id="login-err">비밀번호가 틀렸습니다</div>
+  </div>
+</div>
+
+<div id="admin-screen">
+  <div class="section-title">서비스 공개 관리</div>
+  <div id="service-list"></div>
+  <button class="save-btn" id="save-btn" onclick="saveServices()">💾 저장</button>
+</div>
+
+<div class="toast" id="toast">저장됐습니다 ✅</div>
+
+<script>
+let services = [];
+let adminToken = sessionStorage.getItem('btr_admin_token');
+
+async function doLogin() {
+  const pw = document.getElementById('pw-input').value;
+  const res = await fetch('/api/admin-login', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({password: pw})
+  });
+  const d = await res.json();
+  if (d.ok) {
+    sessionStorage.setItem('btr_admin_token', d.token);
+    adminToken = d.token;
+    showAdmin();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+  }
+}
+
+async function showAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  document.getElementById('logout-btn').style.display = 'block';
+  await loadServices();
+}
+
+async function loadServices() {
+  const res = await fetch('/services.json?t=' + Date.now());
+  services = await res.json();
+  renderServices();
+}
+
+function renderServices() {
+  document.getElementById('service-list').innerHTML = services.map((s,i) => `
+    <div class="service-row">
+      <span class="service-icon">${s.icon}</span>
+      <div class="service-info">
+        <div class="service-name">${s.name}</div>
+        <div class="service-url">${s.url}</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" ${s.visible ? 'checked' : ''} onchange="toggle(${i},this.checked)"/>
+        <span class="slider"></span>
+      </label>
+    </div>
+  `).join('');
+}
+
+function toggle(i, val) { services[i].visible = val; }
+
+async function saveServices() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '저장 중…';
+  const res = await fetch('/api/admin-save', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'X-Admin-Token': adminToken},
+    body: JSON.stringify(services)
+  });
+  btn.disabled = false; btn.textContent = '💾 저장';
+  if (res.ok) {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+}
+
+document.getElementById('logout-btn').onclick = () => {
+  sessionStorage.removeItem('btr_admin_token');
+  location.reload();
+};
+
+// 자동 로그인 체크
+if (adminToken) showAdmin();
+</script>
+</body>
+</html>
