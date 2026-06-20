@@ -1,6 +1,6 @@
-// GET /api/stats — 전체 서비스 클릭 통계 반환
+// GET /api/stats — HUB_STATS(전용 KV)에서 클릭 통계 반환 — 배포와 무관하게 영구 보존
 export async function onRequest({ env }) {
-  const data = await env.HUB_CONFIG.get('click_stats');
+  const data = await env.HUB_STATS.get('click_stats');
   return new Response(data || '{}', {
     headers: {
       'Content-Type': 'application/json',

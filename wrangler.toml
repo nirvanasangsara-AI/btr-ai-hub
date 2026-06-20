@@ -3,7 +3,8 @@ compatibility_date = "2024-09-23"
 pages_build_output_dir = "."
 
 kv_namespaces = [
-  { binding = "HUB_CONFIG", id = "abd6381517e7460695e5b59d8884d703" }
+  { binding = "HUB_CONFIG", id = "abd6381517e7460695e5b59d8884d703" },
+  { binding = "HUB_STATS",  id = "57dbeb79b2324ee8afff6228a5790ee2" }
 ]
 
 [vars]

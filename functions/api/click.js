@@ -1,18 +1,20 @@
-// POST /api/click — 서비스 클릭 1회 기록 (날짜별 누적)
+// POST /api/click — HUB_STATS(전용 KV)에 클릭 기록 — 배포와 무관하게 영구 보존
 export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type' } });
+    return new Response(null, { headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }});
   }
   if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   const { id, date } = await request.json();
   if (!id || !date) return new Response('Bad Request', { status: 400 });
 
-  // 기존 통계 읽기
-  const raw = await env.HUB_CONFIG.get('click_stats');
+  const raw = await env.HUB_STATS.get('click_stats');
   const stats = raw ? JSON.parse(raw) : {};
 
-  // id 별 날짜별 카운트
   if (!stats[id]) stats[id] = {};
   stats[id][date] = (stats[id][date] || 0) + 1;
 
@@ -26,7 +28,7 @@ export async function onRequest({ request, env }) {
     }
   }
 
-  await env.HUB_CONFIG.put('click_stats', JSON.stringify(stats));
+  await env.HUB_STATS.put('click_stats', JSON.stringify(stats));
   return new Response(JSON.stringify({ ok: true }), {
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
   });
