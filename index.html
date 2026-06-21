@@ -44,18 +44,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 .toggle-vis.visible{border-color:#1d4ed8;color:#60a5fa}
 
 /* API 비용 */
-.cost-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:0 28px 32px}
-.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:10px;padding:14px 16px}
-.cost-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.cost-name{font-size:.8rem;font-weight:600;color:#cbd5e1}
-.cost-badge{font-size:.65rem;padding:2px 7px;border-radius:99px;font-weight:600}
+.cost-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;padding:0 28px 32px}
+.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:16px;transition:border-color .15s}
+.cost-card:hover{border-color:#4ade80}
+.cost-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cost-name{font-size:.85rem;font-weight:700;color:#f1f5f9}
+.cost-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.cost-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:#0f172a}
+.cost-row-label{font-size:.72rem;color:#64748b;display:flex;align-items:center;gap:5px}
+.cost-badge{font-size:.62rem;padding:1px 6px;border-radius:99px;font-weight:700}
 .badge-api{background:#1e3a5f;color:#60a5fa}
 .badge-sub{background:#1a2e1a;color:#4ade80}
-.cost-amount{font-size:1.1rem;font-weight:700;color:#f1f5f9;margin-bottom:2px}
-.cost-unit{font-size:.7rem;color:#475569}
-.cost-link{font-size:.7rem;color:#3b82f6;text-decoration:none;display:block;margin-top:8px}
+.badge-infra{background:#2d1f3d;color:#a78bfa}
+.cost-row-val{font-size:.85rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
+.cost-row-val.loading{color:#475569}
+.cost-row-val.manual{color:#f59e0b}
+.cost-divider{border:none;border-top:1px solid #1e3a5f;margin:8px 0}
+.cost-total-row{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
+.cost-total-label{font-size:.72rem;color:#94a3b8;font-weight:600}
+.cost-total-val{font-size:1rem;font-weight:800;color:#4ade80;font-variant-numeric:tabular-nums}
+.cost-link{font-size:.68rem;color:#3b82f6;text-decoration:none;display:block;margin-top:8px;text-align:right}
 .cost-link:hover{color:#60a5fa}
-
+.cost-manual-btn{font-size:.65rem;color:#f59e0b;background:none;border:1px solid #78350f;border-radius:4px;padding:2px 8px;cursor:pointer}
+.cost-total-summary{background:#0f172a;border:1px solid #22c55e;border-radius:12px;padding:16px 20px;margin:0 28px 16px}
+.cts-title{font-size:.72rem;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.cts-rows{display:flex;gap:32px;flex-wrap:wrap;margin-bottom:10px}
+.cts-item{display:flex;flex-direction:column;gap:2px}
+.cts-label{font-size:.68rem;color:#64748b}
+.cts-val{font-size:1.1rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
+.cts-grand{font-size:1.5rem;font-weight:800;color:#4ade80;margin-top:4px}
+.cts-note{font-size:.65rem;color:#475569;margin-top:6px}
 /* 로그인 모달 */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
@@ -93,66 +111,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
   <div style="padding:40px;color:#475569;text-align:center">로딩 중…</div>
 </div>
 
-<!-- API 비용 섹션 — 오너만 보임 -->
+<!-- AI 비용 섹션 — 오너만 보임 -->
 <div id="cost-section" style="display:none">
   <div class="section">
-    <div class="section-label">💳 이달 API · 구독 비용</div>
+    <div class="section-label">💳 이달 AI 비용 — 구독 + API</div>
   </div>
-  <div class="cost-grid">
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">Anthropic (Claude)</span><span class="cost-badge badge-api">API</span></div>
-      <div class="cost-amount">—</div>
-      <div class="cost-unit">이달 누적 / 직접 확인 필요</div>
-      <a class="cost-link" href="https://console.anthropic.com/settings/usage" target="_blank">↗ 사용량 대시보드</a>
+  <div class="cost-total-summary">
+    <div class="cts-title">📊 이달 총계</div>
+    <div class="cts-rows">
+      <div class="cts-item"><div class="cts-label">구독 합계</div><div class="cts-val" id="sum-sub">—</div></div>
+      <div class="cts-item"><div class="cts-label">API 합계</div><div class="cts-val" id="sum-api">—</div></div>
+      <div class="cts-item"><div class="cts-label">인프라·서버</div><div class="cts-val" id="sum-infra">—</div></div>
     </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">OpenAI (GPT)</span><span class="cost-badge badge-api">API</span></div>
-      <div class="cost-amount">—</div>
-      <div class="cost-unit">이달 누적 / 직접 확인 필요</div>
-      <a class="cost-link" href="https://platform.openai.com/settings/organization/billing/overview" target="_blank">↗ 빌링 대시보드</a>
-    </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">Google (Gemini)</span><span class="cost-badge badge-api">API</span></div>
-      <div class="cost-amount">—</div>
-      <div class="cost-unit">이달 누적 / 직접 확인 필요</div>
-      <a class="cost-link" href="https://console.cloud.google.com/billing" target="_blank">↗ GCP 빌링</a>
-    </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">DeepSeek</span><span class="cost-badge badge-api">API</span></div>
-      <div class="cost-amount">—</div>
-      <div class="cost-unit">번역 엔진 / 크레딧 방식</div>
-      <a class="cost-link" href="https://platform.deepseek.com/usage" target="_blank">↗ 사용량 확인</a>
-    </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">Cloudflare</span><span class="cost-badge badge-api">인프라</span></div>
-      <div class="cost-amount">무료</div>
-      <div class="cost-unit">Pages + Workers + KV + R2 Free Tier</div>
-      <a class="cost-link" href="https://dash.cloudflare.com/?to=/:account/billing" target="_blank">↗ 빌링 확인</a>
-    </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">Railway</span><span class="cost-badge badge-api">서버</span></div>
-      <div class="cost-amount">~$10</div>
-      <div class="cost-unit">입찰정보 + 번역엔진 / 월</div>
-      <a class="cost-link" href="https://railway.app/dashboard" target="_blank">↗ 사용량 확인</a>
-    </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">Claude Pro</span><span class="cost-badge badge-sub">구독</span></div>
-      <div class="cost-amount">$20</div>
-      <div class="cost-unit">월정액 구독</div>
-      <a class="cost-link" href="https://claude.ai/settings" target="_blank">↗ 설정</a>
-    </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">ChatGPT Plus</span><span class="cost-badge badge-sub">구독</span></div>
-      <div class="cost-amount">$20</div>
-      <div class="cost-unit">월정액 구독</div>
-      <a class="cost-link" href="https://chat.openai.com/settings" target="_blank">↗ 설정</a>
-    </div>
-    <div class="cost-card">
-      <div class="cost-top"><span class="cost-name">Perplexity Pro</span><span class="cost-badge badge-sub">구독</span></div>
-      <div class="cost-amount">$20</div>
-      <div class="cost-unit">월정액 구독</div>
-      <a class="cost-link" href="https://www.perplexity.ai/settings/api" target="_blank">↗ 설정</a>
-    </div>
+    <div class="cts-grand" id="sum-grand">—</div>
+    <div class="cts-note" id="sum-note">오너 로그인 후 API 자동 조회 (DeepSeek 잔액 · OpenAI 사용량)</div>
+  </div>
+  <div class="cost-grid" id="cost-grid">
+    <div style="color:#475569;font-size:.8rem;padding:20px">비용 데이터 로딩 중…</div>
   </div>
 </div>
 
@@ -221,14 +196,157 @@ function logout() {
 }
 
 function applyOwnerView() {
-  // 헤더
   document.getElementById('owner-badge').style.display = '';
   document.getElementById('login-btn').textContent = '🚪 로그아웃';
   document.getElementById('login-btn').classList.add('owner');
-  // API 비용 섹션 표시
   document.getElementById('cost-section').style.display = '';
-  // 서비스 카드 전체 표시
   renderGrid(ALL_SERVICES, true);
+  loadAiCosts();
+}
+
+// ── AI 비용 로드 ──────────────────────────────────────────
+const COST_CONFIG = [
+  { key:'hermes',    label:'Hermes / Claude',    emoji:'🤖', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage',             note:'Hermes state.db 자동조회' },
+  { key:'anthropic', label:'Anthropic (Claude)', emoji:'🤖', sub:20,  subName:'Claude Pro',        apiAuto:false, dashboard:'https://console.anthropic.com/settings/usage' },
+  { key:'openai',    label:'OpenAI (GPT)',       emoji:'🤖', sub:20,  subName:'ChatGPT Plus',      apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음 — 수동입력' },
+  { key:'gemini',    label:'Google Gemini',      emoji:'🔵', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing' },
+  { key:'deepseek',  label:'DeepSeek',           emoji:'🐋', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage' },
+  { key:'perplexity',label:'Perplexity Pro',     emoji:'🔍', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api' },
+  { key:'railway',   label:'Railway',            emoji:'🚂', sub:10,  subName:'서버 호스팅',        apiAuto:false, dashboard:'https://railway.app/dashboard',                             isInfra:true, note:'403 — 수동입력' },
+  { key:'cloudflare',label:'Cloudflare',         emoji:'☁️', sub:0,   subName:null,                apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier' },
+];
+
+// 수동 입력 저장소 (sessionStorage)
+function getManualCosts() {
+  try { return JSON.parse(sessionStorage.getItem('manual_costs') || '{}'); } catch{ return {}; }
+}
+function setManualCost(key, usd) {
+  const m = getManualCosts(); m[key] = usd;
+  sessionStorage.setItem('manual_costs', JSON.stringify(m));
+}
+
+async function loadAiCosts() {
+  const grid = document.getElementById('cost-grid');
+  grid.innerHTML = '<div style="color:#475569;font-size:.8rem;padding:20px">Worker에서 데이터 조회 중…</div>';
+
+  let workerData = null;
+  try {
+    const r = await fetch('/api/ai-costs', {
+      headers: { 'X-Admin-Token': OWNER_TOKEN }
+    });
+    if (r.ok) workerData = await r.json();
+  } catch(e) { console.warn('ai-costs 조회 실패', e); }
+
+  const manual = getManualCosts();
+
+  // 카드 렌더
+  let sumSub = 0, sumApi = 0, sumInfra = 0;
+  const cards = COST_CONFIG.map(cfg => {
+    const wd = workerData && workerData.services && workerData.services[cfg.key];
+    const subUsd = cfg.sub || 0;
+    if (cfg.isInfra) sumInfra += subUsd;
+    else sumSub += subUsd;
+
+    // API 금액 결정
+    let apiUsd = null, apiLabel = '—', apiClass = 'loading', apiNote = '';
+    if (cfg.key === 'hermes' && wd && wd.api) {
+      if (wd.api.total_usd !== undefined && wd.api.total_usd !== null) {
+        apiUsd = wd.api.total_usd;
+        apiLabel = `$${Number(apiUsd).toFixed(2)}`;
+        apiClass = '';
+        apiNote = wd.api.month ? ` (${wd.api.month})` : '';
+      } else {
+        apiLabel = wd.api.note || '데이터 없음';
+        apiClass = 'loading';
+      }
+    } else if (cfg.key === 'deepseek' && wd && wd.api && wd.api.balance_usd !== undefined && wd.api.balance_usd !== null) {
+      apiUsd = null; // 잔액이지 사용량 아님
+      apiLabel = `잔액 $${Number(wd.api.balance_usd).toFixed(2)}`;
+      apiClass = '';
+      apiNote = wd.api.balance_cny ? ` (¥${Number(wd.api.balance_cny).toFixed(2)})` : '';
+    } else if (cfg.key === 'openai' && wd && wd.api) {
+      if (wd.api.total_used !== undefined) {
+        apiUsd = wd.api.total_used;
+        apiLabel = `$${Number(apiUsd).toFixed(2)}`;
+        apiClass = '';
+      } else if (wd.api.ctx_tokens) {
+        apiLabel = `${((wd.api.ctx_tokens||0)+(wd.api.gen_tokens||0)).toLocaleString()}토큰`;
+        apiClass = '';
+        apiNote = ' (비용직접확인)';
+      }
+    }
+    // 수동 입력 우선
+    if (manual[cfg.key] !== undefined) {
+      apiUsd = manual[cfg.key];
+      apiLabel = `$${Number(apiUsd).toFixed(2)}`;
+      apiClass = 'manual';
+      apiNote = ' ✏️';
+    }
+    if (apiUsd !== null && !cfg.isInfra) sumApi += apiUsd;
+
+    const totalUsd = subUsd + (apiUsd || 0);
+    if (totalUsd > 0 && !cfg.isInfra) {} // sumSub/sumApi 이미 포함
+
+    const subRow = subUsd > 0 || cfg.subName ? `
+      <div class="cost-row">
+        <span class="cost-row-label"><span class="cost-badge badge-sub">구독</span>${cfg.subName || '—'}</span>
+        <span class="cost-row-val">${subUsd > 0 ? '$'+subUsd.toFixed(2) : '—'}</span>
+      </div>` : '';
+
+    const apiRow = (cfg.apiAuto || cfg.key === 'anthropic' || cfg.key === 'gemini') ? `
+      <div class="cost-row">
+        <span class="cost-row-label"><span class="cost-badge badge-api">API</span>이달 사용${apiNote}</span>
+        <span class="cost-row-val ${apiClass}">${apiLabel}</span>
+      </div>` : '';
+
+    const infraRow = cfg.isInfra && subUsd > 0 ? `
+      <div class="cost-row">
+        <span class="cost-row-label"><span class="cost-badge badge-infra">인프라</span>${cfg.subName || cfg.label}</span>
+        <span class="cost-row-val">$${subUsd.toFixed(2)}/월</span>
+      </div>` : '';
+
+    const totalRow = (subUsd > 0 && (cfg.apiAuto || cfg.key === 'anthropic' || cfg.key === 'gemini') && !cfg.isInfra) ? `
+      <hr class="cost-divider"/>
+      <div class="cost-total-row">
+        <span class="cost-total-label">합계</span>
+        <span class="cost-total-val">$${totalUsd.toFixed(2)}</span>
+      </div>` : '';
+
+    const manualBtn = (cfg.apiAuto === false && !cfg.isInfra && cfg.key !== 'perplexity') ? `
+      <button class="cost-manual-btn" onclick="promptManual('${cfg.key}','${cfg.label}')">✏️ 직접입력</button>` : '';
+
+    const noteText = cfg.note ? `<div style="font-size:.65rem;color:#334155;margin-top:4px">${cfg.note}</div>` : '';
+
+    return `<div class="cost-card">
+      <div class="cost-header"><span class="cost-name">${cfg.emoji} ${cfg.label}</span></div>
+      <div class="cost-rows">${subRow}${apiRow}${infraRow}</div>
+      ${totalRow}
+      ${manualBtn}
+      ${noteText}
+      <a class="cost-link" href="${cfg.dashboard}" target="_blank">↗ 대시보드</a>
+    </div>`;
+  }).join('');
+
+  grid.innerHTML = cards;
+
+  // 총합계 업데이트
+  const grand = sumSub + sumApi + sumInfra;
+  document.getElementById('sum-sub').textContent = `$${sumSub.toFixed(2)}`;
+  document.getElementById('sum-api').textContent = sumApi > 0 ? `$${sumApi.toFixed(2)}` : '—';
+  document.getElementById('sum-infra').textContent = `$${sumInfra.toFixed(2)}`;
+  document.getElementById('sum-grand').textContent = `총 $${grand.toFixed(2)}/월`;
+  const mo = workerData && workerData._month ? workerData._month : new Date().toISOString().slice(0,7);
+  document.getElementById('sum-note').textContent = `${mo} 기준 · DeepSeek/OpenAI 자동조회 · 나머지 수동`;
+}
+
+function promptManual(key, label) {
+  const cur = getManualCosts()[key];
+  const val = prompt(`${label} API 이달 사용액 (USD 숫자만, 예: 3.50)`, cur !== undefined ? cur : '');
+  if (val === null) return;
+  const n = parseFloat(val);
+  if (isNaN(n) || n < 0) { alert('숫자를 입력하세요'); return; }
+  setManualCost(key, n);
+  loadAiCosts();
 }
 
 async function load() {
