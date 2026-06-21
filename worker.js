@@ -137,18 +137,27 @@ export default {
       // 4. Gemini — GCP Billing API (복잡), 현재는 수동
       apiCosts.gemini = { manual: true, note: 'console.cloud.google.com 수동 확인' };
 
+      // 5. Hermes — KV에 크론이 저장한 값 읽기
+      const hermesRaw = await env.HUB_CONFIG.get('hermes_cost');
+      if (hermesRaw) {
+        apiCosts.hermes = JSON.parse(hermesRaw);  // { month, total_usd, detail: {...} }
+      } else {
+        apiCosts.hermes = { manual: false, note: '크론 미실행 또는 데이터 없음' };
+      }
+
       // 결과 조합
       const result = {
         _ts: Date.now(),
         _month: new Date().toISOString().slice(0,7),
         services: {
-          anthropic: { label: 'Anthropic (Claude)', sub: SUBSCRIPTIONS.anthropic, api: apiCosts.anthropic, dashboard: 'https://console.anthropic.com/settings/usage' },
-          openai:    { label: 'OpenAI (GPT)',       sub: SUBSCRIPTIONS.openai,    api: apiCosts.openai,    dashboard: 'https://platform.openai.com/settings/organization/billing' },
-          deepseek:  { label: 'DeepSeek',           sub: SUBSCRIPTIONS.deepseek,  api: apiCosts.deepseek,  dashboard: 'https://platform.deepseek.com/usage' },
-          gemini:    { label: 'Google (Gemini)',     sub: SUBSCRIPTIONS.gemini,    api: apiCosts.gemini,    dashboard: 'https://console.cloud.google.com/billing' },
-          perplexity:{ label: 'Perplexity Pro',      sub: SUBSCRIPTIONS.perplexity, api: null,             dashboard: 'https://www.perplexity.ai/settings/api' },
-          railway:   { label: 'Railway',             sub: SUBSCRIPTIONS.railway,   api: null,               dashboard: 'https://railway.app/dashboard' },
-          cloudflare:{ label: 'Cloudflare',          sub: SUBSCRIPTIONS.cloudflare, api: null,              dashboard: 'https://dash.cloudflare.com' },
+          hermes:    { label: 'Hermes / Claude API',  sub: { name: null, usd: 0 },              api: apiCosts.hermes,    dashboard: 'https://console.anthropic.com/settings/usage' },
+          anthropic: { label: 'Anthropic (Claude)',   sub: SUBSCRIPTIONS.anthropic, api: apiCosts.anthropic, dashboard: 'https://console.anthropic.com/settings/usage' },
+          openai:    { label: 'OpenAI (GPT)',         sub: SUBSCRIPTIONS.openai,    api: apiCosts.openai,    dashboard: 'https://platform.openai.com/settings/organization/billing' },
+          deepseek:  { label: 'DeepSeek',             sub: SUBSCRIPTIONS.deepseek,  api: apiCosts.deepseek,  dashboard: 'https://platform.deepseek.com/usage' },
+          gemini:    { label: 'Google (Gemini)',       sub: SUBSCRIPTIONS.gemini,    api: apiCosts.gemini,    dashboard: 'https://console.cloud.google.com/billing' },
+          perplexity:{ label: 'Perplexity Pro',        sub: SUBSCRIPTIONS.perplexity, api: null,             dashboard: 'https://www.perplexity.ai/settings/api' },
+          railway:   { label: 'Railway',               sub: SUBSCRIPTIONS.railway,   api: null,               dashboard: 'https://railway.app/dashboard' },
+          cloudflare:{ label: 'Cloudflare',            sub: SUBSCRIPTIONS.cloudflare, api: null,              dashboard: 'https://dash.cloudflare.com' },
         }
       };
 
