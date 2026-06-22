@@ -72,7 +72,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 /* 오너 배지 */
 .owner-badge{background:#78350f;color:#facc15;font-size:.65rem;padding:2px 8px;border-radius:99px;font-weight:700}
 
-.footer{padding:16px 28px;border-top:1px solid #1e293b;text-align:center;font-size:.7rem;color:#334155}
+.footer{padding:16px 28px;border-top:1px solid #1e293b;text-align:center;font-size:.7rem;color:#475569}
+@media (hover: none) {
+  .card:hover{transform:none;box-shadow:none}
+  .card:active{border-color:#4ade80;box-shadow:0 2px 12px rgba(74,222,128,.1)}
+}
 </style>
 </head>
 <body>
@@ -172,10 +176,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 </div>
 
 <script>
-const TODAY = new Date().toISOString().slice(0,10);
+// KST(UTC+9) 기준 오늘 날짜 — UTC 기준 시 한국 밤 9시 이후 날짜 오류
+const TODAY = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0,10);
 let IS_OWNER = false;
 let OWNER_TOKEN = '';
 let ALL_SERVICES = [];
+let ALL_STATS = {};
 
 // 로그인 상태 복원
 const saved = sessionStorage.getItem('owner_token');
@@ -228,7 +234,7 @@ function applyOwnerView() {
   // API 비용 섹션 표시
   document.getElementById('cost-section').style.display = '';
   // 서비스 카드 전체 표시
-  renderGrid(ALL_SERVICES, true);
+  renderGrid(ALL_SERVICES, true, ALL_STATS);
 }
 
 async function load() {
@@ -243,12 +249,17 @@ async function load() {
   try {
     const r = await fetch('/api/stats?t=' + Date.now());
     stats = await r.json();
+    ALL_STATS = stats;
   } catch(e) {}
 
   document.getElementById('last-updated').textContent = '마지막 열람: ' + new Date().toLocaleString('ko-KR');
 
-  renderGrid(services, IS_OWNER, stats);
-  if (IS_OWNER) applyOwnerView();
+  // 오너뷰면 applyOwnerView()에서 renderGrid 호출 — 중복 방지
+  if (IS_OWNER) {
+    applyOwnerView();
+  } else {
+    renderGrid(services, false, ALL_STATS);
+  }
 }
 
 function renderGrid(services, isOwner, stats) {
@@ -310,7 +321,7 @@ async function toggleVisibility(id, newVisible, e) {
       body: JSON.stringify(ALL_SERVICES)
     });
   } catch(e) {}
-  renderGrid(ALL_SERVICES, true);
+  renderGrid(ALL_SERVICES, true, ALL_STATS);
 }
 
 async function trackClick(id, url) {
