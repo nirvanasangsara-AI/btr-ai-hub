@@ -18,8 +18,8 @@ export async function onRequest({ request, env }) {
   if (!stats[id]) stats[id] = {};
   stats[id][date] = (stats[id][date] || 0) + 1;
 
-  // 60일 이상 된 데이터 정리
-  const cutoff = new Date();
+  // 60일 이상 된 데이터 정리 (KST 기준)
+  const cutoff = new Date(Date.now() + 9 * 60 * 60 * 1000);
   cutoff.setDate(cutoff.getDate() - 60);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
   for (const svcId of Object.keys(stats)) {

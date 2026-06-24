@@ -293,7 +293,9 @@ async function loadAiCosts() {
         <span class="cost-row-val">${subUsd > 0 ? '$'+subUsd.toFixed(2) : '—'}</span>
       </div>` : '';
 
-    const apiRow = (cfg.apiAuto || cfg.key === 'anthropic' || cfg.key === 'gemini') ? `
+    // API행: 자동조회 서비스이거나, 수동입력값이 있으면 무조건 표시
+    const showApiRow = cfg.apiAuto || cfg.key === 'anthropic' || cfg.key === 'gemini' || manual[cfg.key] !== undefined;
+    const apiRow = (showApiRow && !cfg.isInfra) ? `
       <div class="cost-row">
         <span class="cost-row-label"><span class="cost-badge badge-api">API</span>이달 사용${apiNote}</span>
         <span class="cost-row-val ${apiClass}">${apiLabel}</span>
@@ -305,7 +307,7 @@ async function loadAiCosts() {
         <span class="cost-row-val">$${subUsd.toFixed(2)}/월</span>
       </div>` : '';
 
-    const totalRow = (subUsd > 0 && (cfg.apiAuto || cfg.key === 'anthropic' || cfg.key === 'gemini') && !cfg.isInfra) ? `
+    const totalRow = (subUsd > 0 && showApiRow && !cfg.isInfra) ? `
       <hr class="cost-divider"/>
       <div class="cost-total-row">
         <span class="cost-total-label">합계</span>
