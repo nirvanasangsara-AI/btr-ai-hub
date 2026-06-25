@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
 <title>BTR Hub — Admin</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -71,7 +72,7 @@ input:checked+.slider:before{transform:translateX(20px);background:#fff}
 
 <script>
 let services = [];
-let adminToken = sessionStorage.getItem('btr_admin_token');
+let adminToken = sessionStorage.getItem('owner_token');
 
 async function doLogin() {
   const pw = document.getElementById('pw-input').value;
@@ -82,7 +83,7 @@ async function doLogin() {
   });
   const d = await res.json();
   if (d.ok) {
-    sessionStorage.setItem('btr_admin_token', d.token);
+    sessionStorage.setItem('owner_token', d.token);
     adminToken = d.token;
     showAdmin();
   } else {
@@ -138,7 +139,7 @@ async function saveServices() {
 }
 
 document.getElementById('logout-btn').onclick = () => {
-  sessionStorage.removeItem('btr_admin_token');
+  sessionStorage.removeItem('owner_token');
   location.reload();
 };
 
