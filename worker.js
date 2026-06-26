@@ -148,7 +148,7 @@ export default {
       // 결과 조합
       const result = {
         _ts: Date.now(),
-        _month: new Date().toISOString().slice(0,7),
+        _month: new Date(Date.now() + 9*60*60*1000).toISOString().slice(0,7),
         services: {
           hermes:    { label: 'Hermes / Claude API',  sub: { name: null, usd: 0 },              api: apiCosts.hermes,    dashboard: 'https://console.anthropic.com/settings/usage' },
           anthropic: { label: 'Anthropic (Claude)',   sub: SUBSCRIPTIONS.anthropic, api: apiCosts.anthropic, dashboard: 'https://console.anthropic.com/settings/usage' },
