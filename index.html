@@ -65,6 +65,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 .toggle-vis:hover{border-color:#6b7280;color:#94a3b8}
 .toggle-vis.visible{border-color:#1d4ed8;color:#60a5fa}
 
+/* 드래그 앤 드롭 */
+.card[draggable="true"]{cursor:grab}
+.card[draggable="true"]:active{cursor:grabbing}
+.card.dragging{opacity:.35;border-style:dashed;border-color:#475569;transform:none!important;box-shadow:none!important}
+.card.drag-over{border-color:#facc15!important;box-shadow:0 0 0 2px #facc1566!important;transform:scale(1.02)!important}
+.drag-save-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #4ade80;color:#4ade80;font-size:.75rem;padding:6px 18px;border-radius:99px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.drag-save-toast.show{opacity:1}
+
 /* API 비용 */
 .cost-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;padding:0 28px 32px}
 .cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:16px;transition:border-color .15s}
@@ -155,6 +163,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 
 <div class="footer">BTR 수성 내부 전용 · 무단 공유 금지</div>
 
+<div class="drag-save-toast" id="drag-toast">✓ 순서 저장됨</div>
+
 <!-- 로그인 모달 -->
 <div class="modal-bg" id="modal-bg">
   <div class="modal">
@@ -223,6 +233,7 @@ function applyOwnerView() {
   document.getElementById('login-btn').classList.add('owner');
   document.getElementById('cost-section').style.display = '';
   renderGrid(ALL_SERVICES, true);
+  initDrag();
   loadAiCosts();
 }
 
@@ -427,7 +438,7 @@ function renderGrid(services, isOwner, stats) {
       : '';
 
     return `
-      <div class="card${isHidden?' hidden-card':''}" onclick="trackClick('${s.id}','${s.url}')">
+      <div class="card${isHidden?' hidden-card':''}" data-id="${s.id}"${isOwner?' draggable="true"':''} onclick="trackClick('${s.id}','${s.url}')">
         ${toggleBtn}
         <div class="card-top">
           <span class="card-icon">${s.icon}</span>
@@ -441,6 +452,129 @@ function renderGrid(services, isOwner, stats) {
         </div>
       </div>`;
   }).join('');
+}
+
+// ── 드래그 앤 드롭 순서 변경 ──────────────────────────────
+let dragSrc = null;
+let dragSaveTimer = null;
+
+function initDrag() {
+  const grid = document.getElementById('grid');
+  if (!grid) return;
+
+  // 마우스 드래그
+  grid.addEventListener('dragstart', e => {
+    const card = e.target.closest('.card[draggable]');
+    if (!card) return;
+    dragSrc = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.dataset.id);
+  });
+  grid.addEventListener('dragend', e => {
+    const card = e.target.closest('.card');
+    if (card) card.classList.remove('dragging');
+    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    dragSrc = null;
+  });
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const card = e.target.closest('.card[draggable]');
+    if (card && card !== dragSrc) {
+      grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    }
+  });
+  grid.addEventListener('dragleave', e => {
+    const card = e.target.closest('.card');
+    if (card) card.classList.remove('drag-over');
+  });
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    const target = e.target.closest('.card[draggable]');
+    if (!target || !dragSrc || target === dragSrc) return;
+    target.classList.remove('drag-over');
+    const allCards = [...grid.querySelectorAll('.card')];
+    const si = allCards.indexOf(dragSrc);
+    const ti = allCards.indexOf(target);
+    if (si < ti) grid.insertBefore(dragSrc, target.nextSibling);
+    else grid.insertBefore(dragSrc, target);
+    persistOrder();
+  });
+
+  // 터치 드래그 (모바일)
+  let touchCard = null, touchClone = null, touchOffX = 0, touchOffY = 0;
+  grid.addEventListener('touchstart', e => {
+    const card = e.target.closest('.card[draggable]');
+    if (!card) return;
+    const t = e.touches[0];
+    const rect = card.getBoundingClientRect();
+    touchOffX = t.clientX - rect.left;
+    touchOffY = t.clientY - rect.top;
+    touchCard = card;
+    touchClone = card.cloneNode(true);
+    touchClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:.7;z-index:999;pointer-events:none;border:1px solid #facc15;border-radius:10px;transition:none`;
+    document.body.appendChild(touchClone);
+    card.classList.add('dragging');
+  }, {passive:true});
+  grid.addEventListener('touchmove', e => {
+    if (!touchCard || !touchClone) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    touchClone.style.left = (t.clientX - touchOffX) + 'px';
+    touchClone.style.top  = (t.clientY - touchOffY) + 'px';
+    touchClone.style.display = 'none';
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    touchClone.style.display = '';
+    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    const over = el && el.closest('.card[draggable]');
+    if (over && over !== touchCard) over.classList.add('drag-over');
+  }, {passive:false});
+  grid.addEventListener('touchend', e => {
+    if (!touchCard) return;
+    const t = e.changedTouches[0];
+    if (touchClone) { touchClone.remove(); touchClone = null; }
+    touchCard.classList.remove('dragging');
+    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const target = el && el.closest('.card[draggable]');
+    if (target && target !== touchCard) {
+      const allCards = [...grid.querySelectorAll('.card')];
+      const si = allCards.indexOf(touchCard);
+      const ti = allCards.indexOf(target);
+      if (si < ti) grid.insertBefore(touchCard, target.nextSibling);
+      else grid.insertBefore(touchCard, target);
+      persistOrder();
+    }
+    touchCard = null;
+  }, {passive:true});
+}
+
+function persistOrder() {
+  const grid = document.getElementById('grid');
+  const ids = [...grid.querySelectorAll('.card')].map(c => c.dataset.id);
+  ALL_SERVICES.sort((a, b) => {
+    const ai = ids.indexOf(a.id), bi = ids.indexOf(b.id);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+  clearTimeout(dragSaveTimer);
+  dragSaveTimer = setTimeout(async () => {
+    try {
+      await fetch('/api/admin-save', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-Admin-Token': OWNER_TOKEN},
+        body: JSON.stringify(ALL_SERVICES)
+      });
+      showToast();
+    } catch(e) { console.warn('순서 저장 실패', e); }
+  }, 400);
+}
+
+function showToast() {
+  const t = document.getElementById('drag-toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
 }
 
 async function toggleVisibility(id, newVisible, e) {
