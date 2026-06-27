@@ -180,7 +180,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 </div>
 
 <script>
-const TODAY = new Date().toISOString().slice(0,10);
+// KST(UTC+9) 기준 오늘 날짜 — UTC 그대로 쓰면 오전 0~9시에 "어제"로 기록됨
+const TODAY = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 let IS_OWNER = false;
 let OWNER_TOKEN = '';
 let ALL_SERVICES = [];
