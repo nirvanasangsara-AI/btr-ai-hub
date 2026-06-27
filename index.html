@@ -244,6 +244,7 @@ const COST_CONFIG = [
   { key:'anthropic', label:'Anthropic (Claude)', emoji:'🤖', sub:20,  subName:'Claude Pro',        apiAuto:false, dashboard:'https://console.anthropic.com/settings/usage' },
   { key:'openai',    label:'OpenAI (GPT)',       emoji:'🤖', sub:20,  subName:'ChatGPT Plus',      apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음 — 수동입력' },
   { key:'gemini',    label:'Google Gemini',      emoji:'🔵', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing' },
+  { key:'manus',     label:'Manus Pro',          emoji:'🦾', sub:0,   subName:'Manus Pro',         apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249 },
   { key:'deepseek',  label:'DeepSeek',           emoji:'🐋', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage' },
   { key:'perplexity',label:'Perplexity Pro',     emoji:'🔍', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api' },
   { key:'railway',   label:'Railway',            emoji:'🚂', sub:10,  subName:'서버 호스팅',        apiAuto:false, dashboard:'https://railway.app/dashboard',                             isInfra:true, note:'403 — 수동입력' },
@@ -318,6 +319,24 @@ async function loadAiCosts() {
     }
     if (apiUsd !== null && !cfg.isInfra) sumApi += apiUsd;
 
+    // 크레딧제 (Manus 등) 처리
+    let creditRow = '';
+    if (cfg.creditTotal) {
+      const used = cfg.creditUsed || 0;
+      const remain = cfg.creditTotal - used;
+      const pct = Math.round(used / cfg.creditTotal * 100);
+      creditRow = `
+      <div class="cost-row" style="flex-direction:column;gap:4px">
+        <div style="display:flex;justify-content:space-between;width:100%">
+          <span class="cost-row-label"><span class="cost-badge badge-api">크레딧</span>사용 ${used.toLocaleString()} / ${cfg.creditTotal.toLocaleString()}</span>
+          <span class="cost-row-val">${remain.toLocaleString()} 남음</span>
+        </div>
+        <div style="width:100%;height:4px;background:#1e293b;border-radius:2px">
+          <div style="width:${pct}%;height:4px;background:#f59e0b;border-radius:2px"></div>
+        </div>
+      </div>`;
+    }
+
     const totalUsd = subUsd + (apiUsd || 0);
     if (totalUsd > 0 && !cfg.isInfra) {} // sumSub/sumApi 이미 포함
 
@@ -355,7 +374,7 @@ async function loadAiCosts() {
 
     return `<div class="cost-card">
       <div class="cost-header"><span class="cost-name">${cfg.emoji} ${cfg.label}</span></div>
-      <div class="cost-rows">${subRow}${apiRow}${infraRow}</div>
+      <div class="cost-rows">${subRow}${apiRow}${infraRow}${creditRow}</div>
       ${totalRow}
       ${manualBtn}
       ${noteText}
