@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BTR 에이전트 대시보드</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;overflow:hidden}
+
+.header{padding:10px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:-.5px}
+.logo span{color:#facc15}
+.logo a{color:inherit;text-decoration:none;font-size:.75rem;color:#475569;margin-left:10px}
+.logo a:hover{color:#94a3b8}
+.status-bar{display:flex;align-items:center;gap:14px;font-size:.7rem;color:#475569}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px}
+.dot.live{background:#4ade80;animation:pulse 2s infinite}
+.dot.idle{background:#475569}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.updated{font-size:.65rem;color:#334155}
+
+#graph-container{width:100vw;height:calc(100vh - 44px);position:relative}
+
+svg{width:100%;height:100%}
+
+/* Legend */
+.legend{position:absolute;top:10px;right:14px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:.65rem;color:#94a3b8}
+.legend-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.legend-row:last-child{margin-bottom:0}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* Counts banner */
+.counts{position:absolute;top:10px;left:14px;display:flex;gap:8px}
+.count-chip{background:#1e293b;border:1px solid #334155;border-radius:6px;padding:4px 10px;font-size:.65rem;color:#94a3b8;display:flex;align-items:center;gap:5px}
+.count-chip .n{font-size:.9rem;font-weight:700}
+.count-chip .n.running{color:#3b82f6}
+.count-chip .n.done{color:#4ade80}
+.count-chip .n.blocked{color:#ef4444}
+.count-chip .n.todo{color:#f59e0b}
+
+/* Tooltip */
+.tooltip{position:absolute;pointer-events:none;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 11px;font-size:.68rem;color:#e2e8f0;max-width:220px;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,.5);opacity:0;transition:opacity .15s}
+.tooltip strong{display:block;color:#f1f5f9;margin-bottom:3px;font-size:.72rem}
+.tooltip .assignee{color:#94a3b8;font-size:.62rem}
+.tooltip .summary{color:#64748b;font-size:.62rem;margin-top:3px;border-top:1px solid #334155;padding-top:3px}
+
+/* node labels */
+.node-label{font-size:.6rem;fill:#94a3b8;text-anchor:middle;pointer-events:none}
+.agent-label{font-size:.55rem;fill:#475569;text-anchor:middle;pointer-events:none}
+
+/* Empty state */
+.empty{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#334155}
+.empty .icon{font-size:3rem;margin-bottom:10px}
+.empty p{font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    BTR <span>AI</span> 에이전트
+    <a href="/">← Hub</a>
+  </div>
+  <div class="status-bar">
+    <span id="live-indicator"><span class="dot idle" id="live-dot"></span><span id="live-label">연결 중...</span></span>
+    <span class="updated" id="updated-label"></span>
+  </div>
+</div>
+
+<div id="graph-container">
+  <div class="counts" id="counts"></div>
+  <div class="legend">
+    <div class="legend-row"><div class="legend-dot" style="background:#3b82f6"></div> running (진행)</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#4ade80"></div> done (완료)</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#ef4444"></div> blocked (차단)</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#f59e0b"></div> todo / ready</div>
+    <div class="legend-row"><div class="legend-dot" style="background:#8b5cf6"></div> 에이전트 노드</div>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+  <svg id="svg"></svg>
+  <div class="empty" id="empty-state" style="display:none">
+    <div class="icon">🤖</div>
+    <p>실행 중인 태스크가 없습니다.<br>Kanban 워커가 시작되면 여기에 표시됩니다.</p>
+  </div>
+</div>
+
+<script>
+const STATUS_COLOR = {
+  running: '#3b82f6',
+  done:    '#4ade80',
+  blocked: '#ef4444',
+  todo:    '#f59e0b',
+  ready:   '#f59e0b',
+};
+const AGENT_NODES = ['researcher','developer','data','reviewer','default'];
+const AGENT_COLOR = '#8b5cf6';
+const AGENT_R = 22;
+const TASK_R = 10;
+const TASK_RECENT_R = 13;
+
+let simulation, svg, linkG, nodeG;
+let currentData = {tasks:[], updated_at: null};
+let tooltipEl = document.getElementById('tooltip');
+let lastFetch = 0;
+
+function initSVG(){
+  svg = d3.select('#svg');
+  svg.append('defs').append('marker')
+    .attr('id','arrow')
+    .attr('viewBox','0 -4 10 8')
+    .attr('refX',18).attr('refY',0)
+    .attr('markerWidth',6).attr('markerHeight',6)
+    .attr('orient','auto')
+    .append('path').attr('d','M0,-4L10,0L0,4').attr('fill','#334155');
+
+  linkG = svg.append('g').attr('class','links');
+  nodeG = svg.append('g').attr('class','nodes');
+
+  simulation = d3.forceSimulation()
+    .force('link', d3.forceLink().id(d=>d.id).distance(d=>d.source.type==='agent'?120:70).strength(0.7))
+    .force('charge', d3.forceManyBody().strength(-320))
+    .force('center', d3.forceCenter(window.innerWidth/2, (window.innerHeight-44)/2))
+    .force('collision', d3.forceCollide().radius(d=>d.type==='agent'?AGENT_R+18:TASK_R+22));
+
+  window.addEventListener('resize', ()=>{
+    simulation.force('center', d3.forceCenter(window.innerWidth/2, (window.innerHeight-44)/2));
+    simulation.alpha(0.2).restart();
+  });
+}
+
+function buildGraph(tasks){
+  // Build nodes: agent nodes + task nodes
+  const agentSet = new Set(tasks.map(t=>t.assignee).filter(Boolean));
+  const agentNodes = [...agentSet].map(id=>({id:'agent:'+id, label:id, type:'agent', tasks:[]}));
+  const agentMap = Object.fromEntries(agentNodes.map(n=>[n.label, n]));
+
+  const now = Date.now();
+  const taskNodes = tasks.map(t=>({
+    id: t.id,
+    label: t.title ? t.title.slice(0,28) + (t.title.length>28?'…':'') : t.id,
+    type: 'task',
+    status: t.status || 'todo',
+    assignee: t.assignee,
+    summary: t.summary || '',
+    started_at: t.started_at,
+    recent: t.started_at && (now/1000 - t.started_at < 3600),
+    raw: t,
+  }));
+
+  // edges: task → its agent node + parent→child
+  const links = [];
+  const taskIds = new Set(tasks.map(t=>t.id));
+
+  for(const t of taskNodes){
+    if(t.assignee && agentMap[t.assignee]){
+      links.push({source:'agent:'+t.assignee, target:t.id, type:'assign'});
+    }
+  }
+  // parent→child edges between tasks
+  for(const t of tasks){
+    if(t.parents){
+      for(const pid of t.parents){
+        if(taskIds.has(pid)){
+          links.push({source:pid, target:t.id, type:'dep'});
+        }
+      }
+    }
+  }
+
+  const nodes = [...agentNodes, ...taskNodes];
+  return {nodes, links};
+}
+
+function updateCounts(tasks){
+  const counts = {running:0,done:0,blocked:0,todo:0};
+  for(const t of tasks){
+    const s = t.status||'todo';
+    if(counts[s]!==undefined) counts[s]++;
+    else counts.todo++;
+  }
+  document.getElementById('counts').innerHTML = Object.entries(counts)
+    .map(([s,n])=>`<div class="count-chip"><span class="n ${s}">${n}</span>${s}</div>`)
+    .join('');
+}
+
+function render(data){
+  const tasks = data.tasks || [];
+  currentData = data;
+
+  updateCounts(tasks);
+
+  const emptyEl = document.getElementById('empty-state');
+  if(!tasks.length){ emptyEl.style.display='block'; return; }
+  emptyEl.style.display='none';
+
+  const {nodes, links} = buildGraph(tasks);
+
+  // Preserve positions of existing nodes
+  const oldNodes = (simulation.nodes && simulation.nodes()) || [];
+  const posMap = Object.fromEntries(oldNodes.map(n=>[n.id,{x:n.x,y:n.y,vx:n.vx,vy:n.vy}]));
+  for(const n of nodes){
+    if(posMap[n.id]){ Object.assign(n, posMap[n.id]); }
+  }
+
+  simulation.nodes(nodes);
+  simulation.force('link').links(links);
+  simulation.alpha(0.3).restart();
+
+  // Links
+  const linkSel = linkG.selectAll('line').data(links, d=>d.source+'-'+d.target);
+  linkSel.enter().append('line')
+    .attr('stroke', d=>d.type==='assign'?'#1e3a5f':'#334155')
+    .attr('stroke-width', d=>d.type==='assign'?1:1.5)
+    .attr('stroke-dasharray', d=>d.type==='dep'?'4 3':null)
+    .attr('marker-end','url(#arrow)')
+    .attr('opacity',0.6)
+    .merge(linkSel);
+  linkSel.exit().remove();
+
+  // Nodes
+  const nodeSel = nodeG.selectAll('g.node-g').data(nodes, d=>d.id);
+
+  const nodeEnter = nodeSel.enter().append('g')
+    .attr('class','node-g')
+    .call(d3.drag()
+      .on('start', (evt,d)=>{ if(!evt.active) simulation.alphaTarget(0.2).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',  (evt,d)=>{ d.fx=evt.x; d.fy=evt.y; })
+      .on('end',   (evt,d)=>{ if(!evt.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }))
+    .on('mouseover', showTooltip)
+    .on('mousemove', moveTooltip)
+    .on('mouseout', hideTooltip);
+
+  nodeEnter.append('circle');
+  nodeEnter.append('text').attr('class','node-label');
+  nodeEnter.append('text').attr('class','agent-label').attr('dy','-1.1em');
+
+  const nodeMerge = nodeEnter.merge(nodeSel);
+
+  nodeMerge.select('circle')
+    .attr('r', d=>d.type==='agent' ? AGENT_R : (d.recent ? TASK_RECENT_R : TASK_R))
+    .attr('fill', d=>d.type==='agent' ? AGENT_COLOR : (STATUS_COLOR[d.status]||'#f59e0b'))
+    .attr('opacity', d=>d.type==='agent' ? 0.9 : (d.status==='done' ? 0.5 : 0.85))
+    .attr('stroke', d=>d.type==='agent' ? '#7c3aed' : 'none')
+    .attr('stroke-width', 2);
+
+  nodeMerge.select('text.node-label')
+    .text(d=>d.type==='agent' ? d.label : (d.status==='running'?'▶ ':d.status==='blocked'?'⛔ ':d.status==='done'?'✓ ':'') + d.label)
+    .attr('dy', d=>d.type==='agent' ? (AGENT_R+12)+'px' : (TASK_R+11)+'px');
+
+  nodeMerge.select('text.agent-label')
+    .text(d=>d.type==='agent' ? '에이전트' : '');
+
+  nodeSel.exit().remove();
+
+  simulation.on('tick', ()=>{
+    linkG.selectAll('line')
+      .attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+      .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    nodeG.selectAll('g.node-g')
+      .attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+}
+
+function showTooltip(evt, d){
+  if(d.type==='agent'){
+    tooltipEl.innerHTML = `<strong>🤖 ${d.label}</strong><span class="assignee">에이전트 노드</span>`;
+  } else {
+    const s = d.status||'todo';
+    const sLabel = {running:'🔵 진행',done:'🟢 완료',blocked:'🔴 차단',todo:'🟡 대기',ready:'🟡 준비'}[s]||s;
+    tooltipEl.innerHTML = `
+      <strong>${d.label}</strong>
+      <span class="assignee">${sLabel} · ${d.assignee||'-'}</span>
+      ${d.summary ? `<div class="summary">${d.summary.slice(0,120)}</div>` : ''}
+      <div style="font-size:.58rem;color:#334155;margin-top:4px">${d.id}</div>
+    `;
+  }
+  tooltipEl.style.opacity='1';
+  moveTooltip(evt);
+}
+function moveTooltip(evt){
+  let x = evt.clientX+12, y = evt.clientY-10;
+  if(x+230>window.innerWidth) x = evt.clientX-230;
+  tooltipEl.style.left=x+'px'; tooltipEl.style.top=y+'px';
+}
+function hideTooltip(){ tooltipEl.style.opacity='0'; }
+
+// Fetch from CF API
+async function fetchState(){
+  try{
+    const r = await fetch('/api/kanban-state', {cache:'no-store'});
+    if(!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    lastFetch = Date.now();
+    document.getElementById('live-dot').className='dot live';
+    document.getElementById('live-label').textContent='실시간';
+    if(data.updated_at){
+      const d = new Date(data.updated_at);
+      document.getElementById('updated-label').textContent='마지막 업데이트: '+d.toLocaleTimeString('ko-KR');
+    }
+    render(data);
+  } catch(e){
+    document.getElementById('live-dot').className='dot idle';
+    document.getElementById('live-label').textContent='연결 오류';
+    console.error('fetch error:', e);
+  }
+}
+
+initSVG();
+fetchState();
+setInterval(fetchState, 15000); // 15초마다 폴링
+</script>
+</body>
+</html>
