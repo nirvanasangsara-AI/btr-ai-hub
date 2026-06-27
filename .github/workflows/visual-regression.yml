@@ -1,0 +1,42 @@
+name: Visual Regression
+
+on:
+  deployment_status:
+
+jobs:
+  visual:
+    if: |
+      github.event.deployment_status.state == 'success' &&
+      contains(github.event.deployment.environment, 'Preview')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm install
+      - run: npx playwright install chromium --with-deps
+      - name: Download baseline
+        uses: actions/download-artifact@v4
+        with:
+          name: pw-snapshots-ai-hub
+          path: e2e/__snapshots__
+        continue-on-error: true
+      - name: Run visual tests
+        env:
+          BASE_URL: ${{ github.event.deployment_status.environment_url }}
+        run: npx playwright test --reporter=github
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pw-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 7
+      - name: Update baseline (main)
+        if: github.ref == 'refs/heads/main' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pw-snapshots-ai-hub
+          path: e2e/__snapshots__/
+          overwrite: true
