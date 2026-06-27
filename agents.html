@@ -54,6 +54,18 @@ svg{width:100%;height:100%}
 .empty{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#334155}
 .empty .icon{font-size:3rem;margin-bottom:10px}
 .empty p{font-size:.8rem}
+  .stat-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .stat-label { color: #94a3b8; font-size: 12px; margin-bottom: 6px; }
+  .stat-value { color: #f1f5f9; font-size: 28px; font-weight: 700; }
+  .chart-title { color: #94a3b8; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .chart-bar-label { font-size: 10px; fill: #94a3b8; }
+  .chart-axis line, .chart-axis path { stroke: #334155; }
+  .chart-axis text { fill: #64748b; font-size: 10px; }
 </style>
 </head>
 <body>
@@ -83,6 +95,24 @@ svg{width:100%;height:100%}
     <div class="icon">🤖</div>
     <p>실행 중인 태스크가 없습니다.<br>Kanban 워커가 시작되면 여기에 표시됩니다.</p>
   </div>
+</div>
+
+<!-- 통계 섹션 -->
+<div id="stats-section" style="padding:0 24px 32px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div class="stat-box">
+      <div class="stat-label">전체 처리 태스크</div>
+      <div class="stat-value" id="stat-all-time">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">누적 완료</div>
+      <div class="stat-value" id="stat-done-total" style="color:#4ade80">—</div>
+    </div>
+  </div>
+  <div class="chart-title">일별 태스크 현황 (최근 30일)</div>
+  <div id="daily-chart"></div>
+  <div class="chart-title" style="margin-top:20px;">누적 완료 추이</div>
+  <div id="cumulative-chart"></div>
 </div>
 
 <script>
@@ -309,6 +339,101 @@ async function fetchState(){
 initSVG();
 fetchState();
 setInterval(fetchState, 15000); // 15초마다 폴링
+
+// ── 히스토리 차트 ──────────────────────────────────────────
+async function fetchHistory() {
+  try {
+    const r = await fetch('/api/kanban-history');
+    if (!r.ok) return;
+    const data = await r.json();
+    renderCharts(data.daily || []);
+  } catch(e) { console.warn('history fetch failed', e); }
+}
+
+function renderCharts(daily) {
+  if (!daily.length) return;
+  const last30 = daily.slice(-30);
+
+  // 요약 카드
+  const latest = last30[last30.length - 1] || {};
+  document.getElementById('stat-all-time').textContent = latest.all_time_total ?? '—';
+  document.getElementById('stat-done-total').textContent = latest.done_total ?? '—';
+
+  // 공통 크기
+  const W = document.getElementById('daily-chart').clientWidth || 600;
+  const H = 160, ml = 40, mr = 16, mt = 10, mb = 40;
+  const w = W - ml - mr, h = H - mt - mb;
+
+  // ① 일별 스택 바 차트
+  {
+    d3.select('#daily-chart svg').remove();
+    const svg = d3.select('#daily-chart').append('svg').attr('width', W).attr('height', H);
+    const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+
+    const keys = ['running','blocked','todo','done'];
+    const colors = {running:'#3b82f6', blocked:'#ef4444', todo:'#f59e0b', done:'#4ade80'};
+    const stacked = d3.stack().keys(keys)(last30);
+    const xScale = d3.scaleBand().domain(last30.map(d=>d.date)).range([0,w]).padding(0.25);
+    const yMax = d3.max(last30, d => (d.running||0)+(d.blocked||0)+(d.todo||0)+(d.done||0));
+    const yScale = d3.scaleLinear().domain([0, yMax||1]).range([h,0]);
+
+    stacked.forEach(layer => {
+      g.selectAll(`.bar-${layer.key}`)
+        .data(layer)
+        .join('rect')
+        .attr('x', d => xScale(d.data.date))
+        .attr('y', d => yScale(d[1]))
+        .attr('height', d => yScale(d[0]) - yScale(d[1]))
+        .attr('width', xScale.bandwidth())
+        .attr('fill', colors[layer.key])
+        .attr('opacity', 0.85);
+    });
+
+    // x축 날짜 (7일 간격)
+    g.append('g').attr('class','chart-axis').attr('transform',`translate(0,${h})`)
+      .call(d3.axisBottom(xScale).tickValues(last30.filter((_,i)=>i%7===0).map(d=>d.date))
+        .tickFormat(d => d.slice(5)));
+
+    // y축
+    g.append('g').attr('class','chart-axis').call(d3.axisLeft(yScale).ticks(4));
+  }
+
+  // ② 누적 완료 라인 차트
+  {
+    d3.select('#cumulative-chart svg').remove();
+    const svg = d3.select('#cumulative-chart').append('svg').attr('width', W).attr('height', H);
+    const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+
+    const xScale = d3.scalePoint().domain(last30.map(d=>d.date)).range([0,w]);
+    const yMax = d3.max(last30, d => d.done_total || 0);
+    const yScale = d3.scaleLinear().domain([0, yMax||1]).range([h,0]);
+
+    const line = d3.line().x(d=>xScale(d.date)).y(d=>yScale(d.done_total||0)).curve(d3.curveMonotoneX);
+
+    // 그라데이션
+    const grad = svg.append('defs').append('linearGradient').attr('id','cgrad').attr('x1','0').attr('x2','0').attr('y1','0').attr('y2','1');
+    grad.append('stop').attr('offset','0%').attr('stop-color','#4ade80').attr('stop-opacity',0.3);
+    grad.append('stop').attr('offset','100%').attr('stop-color','#4ade80').attr('stop-opacity',0);
+
+    const area = d3.area().x(d=>xScale(d.date)).y0(h).y1(d=>yScale(d.done_total||0)).curve(d3.curveMonotoneX);
+    g.append('path').datum(last30).attr('fill','url(#cgrad)').attr('d',area).attr('transform',`translate(0,0)`);
+    g.append('path').datum(last30).attr('fill','none').attr('stroke','#4ade80').attr('stroke-width',2).attr('d',line);
+
+    // 마지막 값 라벨
+    const last = last30[last30.length-1];
+    g.append('text').attr('x',xScale(last.date)).attr('y',yScale(last.done_total||0)-8)
+      .attr('text-anchor','middle').attr('fill','#4ade80').attr('font-size','11px')
+      .text(last.done_total||0);
+
+    g.append('g').attr('class','chart-axis').attr('transform',`translate(0,${h})`)
+      .call(d3.axisBottom(xScale).tickValues(last30.filter((_,i)=>i%7===0).map(d=>d.date))
+        .tickFormat(d=>d.slice(5)));
+    g.append('g').attr('class','chart-axis').call(d3.axisLeft(yScale).ticks(4));
+  }
+}
+
+fetchHistory();
+setInterval(fetchHistory, 60000); // 1분마다 갱신
 </script>
 </body>
 </html>
