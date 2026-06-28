@@ -242,13 +242,15 @@ function applyOwnerView() {
 // ── AI 비용 로드 ──────────────────────────────────────────
 const COST_CONFIG = [
   { key:'hermes',    label:'Hermes / Claude',    emoji:'🤖', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage',             note:'Hermes state.db 자동조회' },
+  { key:'openrouter',label:'OpenRouter (Pareto)', emoji:'🦾', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://openrouter.ai/settings/credits',                    note:'자동 라우팅 — 복잡도별 모델 선택' },
   { key:'anthropic', label:'Anthropic (Claude)', emoji:'🤖', sub:20,  subName:'Claude Pro',        apiAuto:false, dashboard:'https://console.anthropic.com/settings/usage' },
   { key:'openai',    label:'OpenAI (GPT)',       emoji:'🤖', sub:20,  subName:'ChatGPT Plus',      apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음 — 수동입력' },
   { key:'gemini',    label:'Google Gemini',      emoji:'🔵', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing' },
   { key:'manus',     label:'Manus Pro',          emoji:'🦾', sub:0,   subName:'Manus Pro',         apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249 },
   { key:'deepseek',  label:'DeepSeek',           emoji:'🐋', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage' },
+  { key:'elevenlabs',label:'ElevenLabs',          emoji:'🎙️', sub:22,  subName:'Creator 플랜',     apiAuto:false, dashboard:'https://elevenlabs.io/app/subscription',                 note:'TTS 음성생성 — $22/월 고정' },
   { key:'perplexity',label:'Perplexity Pro',     emoji:'🔍', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api' },
-  { key:'railway',   label:'Railway',            emoji:'🚂', sub:10,  subName:'서버 호스팅',        apiAuto:false, dashboard:'https://railway.app/dashboard',                             isInfra:true, note:'403 — 수동입력' },
+  { key:'railway',   label:'Railway',            emoji:'🚂', sub:0,   subName:'서버 호스팅 (무료)', isInfra:true,  dashboard:'https://railway.app/dashboard',                             note:'Trial 무료' },
   { key:'cloudflare',label:'Cloudflare',         emoji:'☁️', sub:0,   subName:null,                apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier' },
 ];
 

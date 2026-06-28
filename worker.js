@@ -137,7 +137,26 @@ export default {
       // 4. Gemini — GCP Billing API (복잡), 현재는 수동
       apiCosts.gemini = { manual: true, note: 'console.cloud.google.com 수동 확인' };
 
-      // 5. Hermes — KV에 크론이 저장한 값 읽기
+      // 5. OpenRouter — 크레딧+사용량 (Pareto Code 라우팅 포함)
+      try {
+        if (env.OPENROUTER_API_KEY) {
+          const r = await fetch('https://openrouter.ai/api/v1/auth/key', {
+            headers: { 'Authorization': `Bearer ${env.OPENROUTER_API_KEY}` }
+          });
+          if (r.ok) {
+            const d = await r.json();
+            const data = d.data || d;
+            apiCosts.openrouter = {
+              usage_monthly: data.usage_monthly || data.usage || 0,
+              credits: data.credits || null,
+              limit: data.limit,
+              source: 'api'
+            };
+          }
+        }
+      } catch(e) { apiCosts.openrouter = { error: e.message, source: 'api' }; }
+
+      // 6. Hermes — KV에 크론이 저장한 값 읽기
       const hermesRaw = await env.HUB_CONFIG.get('hermes_cost');
       if (hermesRaw) {
         apiCosts.hermes = JSON.parse(hermesRaw);  // { month, total_usd, detail: {...} }
@@ -151,6 +170,7 @@ export default {
         _month: new Date(Date.now() + 9*60*60*1000).toISOString().slice(0,7),
         services: {
           hermes:    { label: 'Hermes / Claude API',  sub: { name: null, usd: 0 },              api: apiCosts.hermes,    dashboard: 'https://console.anthropic.com/settings/usage' },
+          openrouter:{ label: 'OpenRouter (Pareto)', sub: { name: null, usd: 0 },              api: apiCosts.openrouter, dashboard: 'https://openrouter.ai/settings/credits' },
           anthropic: { label: 'Anthropic (Claude)',   sub: SUBSCRIPTIONS.anthropic, api: apiCosts.anthropic, dashboard: 'https://console.anthropic.com/settings/usage' },
           openai:    { label: 'OpenAI (GPT)',         sub: SUBSCRIPTIONS.openai,    api: apiCosts.openai,    dashboard: 'https://platform.openai.com/settings/organization/billing' },
           deepseek:  { label: 'DeepSeek',             sub: SUBSCRIPTIONS.deepseek,  api: apiCosts.deepseek,  dashboard: 'https://platform.deepseek.com/usage' },
