@@ -50,7 +50,19 @@ svg{width:100%;height:100%}
 .node-label{font-size:.6rem;fill:#94a3b8;text-anchor:middle;pointer-events:none}
 .agent-label{font-size:.55rem;fill:#475569;text-anchor:middle;pointer-events:none}
 
-/* Empty state */
+/* Glow filter */
+.filter-glow{filter:url(#glow)}.filter-glow-blue{filter:url(#glow-blue)}.filter-glow-green{filter:url(#glow-green)}
+/* Edge pulse animation */
+@keyframes edgePulse{0%,100%{opacity:0.4}50%{opacity:1}}
+.edge-pulse{animation:edgePulse 3s ease-in-out infinite}
+/* Particle */
+@keyframes orbit{from{transform:rotate(0deg) translateX(28px)}to{transform:rotate(360deg) translateX(28px)}}
+.particle-ring{animation:orbit 8s linear infinite;transform-origin:center}
+.particle-ring.fast{animation-duration:4s}
+/* Card-style nodes */
+.card-node{filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6))}
+.card-node.running{filter:drop-shadow(0 0 12px rgba(59,130,246,0.5))}
+.card-node.blocked{filter:drop-shadow(0 0 12px rgba(239,68,68,0.5))}
 .empty{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#334155}
 .empty .icon{font-size:3rem;margin-bottom:10px}
 .empty p{font-size:.8rem}
@@ -136,12 +148,21 @@ let lastFetch = 0;
 
 function initSVG(){
   svg = d3.select('#svg');
-  svg.append('defs').append('marker')
-    .attr('id','arrow')
-    .attr('viewBox','0 -4 10 8')
-    .attr('refX',18).attr('refY',0)
-    .attr('markerWidth',6).attr('markerHeight',6)
-    .attr('orient','auto')
+  // ── Glow filters ──
+  const defs = svg.append('defs');
+  [{id:'glow',c:'#8b5cf6'},{id:'glow-blue',c:'#3b82f6'},{id:'glow-green',c:'#4ade80'}].forEach(g=>{
+    const f=defs.append('filter').attr('id',g.id).attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
+    f.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+    f.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).enter().append('feMergeNode').attr('in',d=>d);
+  });
+  // Edge glow
+  const edgeGlow=defs.append('filter').attr('id','edge-glow').attr('x','-20%').attr('y','-20%').attr('width','140%').attr('height','140%');
+  edgeGlow.append('feGaussianBlur').attr('stdDeviation','2').attr('result','blur');
+  edgeGlow.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).enter().append('feMergeNode').attr('in',d=>d);
+
+  // Arrow marker
+  defs.append('marker').attr('id','arrow').attr('viewBox','0 -4 10 8')
+    .attr('refX',18).attr('refY',0).attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
     .append('path').attr('d','M0,-4L10,0L0,4').attr('fill','#334155');
 
   linkG = svg.append('g').attr('class','links');
@@ -240,11 +261,13 @@ function render(data){
   // Links
   const linkSel = linkG.selectAll('line').data(links, d=>d.source+'-'+d.target);
   linkSel.enter().append('line')
+    .attr('class', d=>d.type==='assign' && d.source?.type==='agent' ? 'edge-pulse' : '')
     .attr('stroke', d=>d.type==='assign'?'#1e3a5f':'#334155')
-    .attr('stroke-width', d=>d.type==='assign'?1:1.5)
+    .attr('stroke-width', d=>d.type==='assign'?2:1.5)
     .attr('stroke-dasharray', d=>d.type==='dep'?'4 3':null)
-    .attr('marker-end','url(#arrow)')
+    .attr('marker-end', d=>d.type==='assign'?null:'url(#arrow)')
     .attr('opacity',0.6)
+    .attr('filter', d=>d.type==='assign' && d.target?.status==='running' ? 'url(#edge-glow)' : null)
     .merge(linkSel);
   linkSel.exit().remove();
 
@@ -261,18 +284,45 @@ function render(data){
     .on('mousemove', moveTooltip)
     .on('mouseout', hideTooltip);
 
-  nodeEnter.append('circle');
+  nodeEnter.append('circle').attr('class','node-bg');
+  nodeEnter.append('circle').attr('class','node-main');
+  // Agent: glow ring + particle
+  nodeEnter.filter(d=>d.type==='agent').append('circle').attr('class','glow-ring');
+  nodeEnter.filter(d=>d.type==='agent').append('circle').attr('class','particle particle-ring');
+  nodeEnter.filter(d=>d.type==='agent').append('circle').attr('class','particle particle-ring fast');
   nodeEnter.append('text').attr('class','node-label');
   nodeEnter.append('text').attr('class','agent-label').attr('dy','-1.1em');
 
   const nodeMerge = nodeEnter.merge(nodeSel);
 
-  nodeMerge.select('circle')
+  // Background halo
+  nodeMerge.select('circle.node-bg')
+    .attr('r', d=>d.type==='agent' ? AGENT_R+8 : (d.recent ? TASK_RECENT_R+5 : TASK_R+5))
+    .attr('fill', d=>d.type==='agent' ? 'rgba(139,92,246,0.15)' : 'none')
+    .attr('stroke', 'none');
+
+  // Main circle
+  nodeMerge.select('circle.node-main')
     .attr('r', d=>d.type==='agent' ? AGENT_R : (d.recent ? TASK_RECENT_R : TASK_R))
     .attr('fill', d=>d.type==='agent' ? AGENT_COLOR : (STATUS_COLOR[d.status]||'#f59e0b'))
-    .attr('opacity', d=>d.type==='agent' ? 0.9 : (d.status==='done' ? 0.5 : 0.85))
-    .attr('stroke', d=>d.type==='agent' ? '#7c3aed' : 'none')
-    .attr('stroke-width', 2);
+    .attr('opacity', d=>d.type==='agent' ? 0.95 : (d.status==='done' ? 0.5 : 0.85))
+    .attr('stroke', d=>d.type==='agent' ? '#a78bfa' : 'none')
+    .attr('stroke-width', d=>d.type==='agent' ? 2 : 0)
+    .attr('filter', d=>d.type==='agent' ? 'url(#glow)' : (d.status==='running'?'url(#glow-blue)':(d.status==='done'?'url(#glow-green)':null)));
+
+  // Glow ring (agent only)
+  nodeMerge.select('circle.glow-ring')
+    .attr('r', AGENT_R+4)
+    .attr('fill', 'none')
+    .attr('stroke', '#c4b5fd')
+    .attr('stroke-width', 1)
+    .attr('opacity', 0.6);
+
+  // Particles (agent only)
+  nodeMerge.selectAll('circle.particle')
+    .attr('r', 2.5)
+    .attr('fill', '#c4b5fd')
+    .attr('opacity', 0.8);
 
   nodeMerge.select('text.node-label')
     .text(d=>d.type==='agent' ? d.label : (d.status==='running'?'▶ ':d.status==='blocked'?'⛔ ':d.status==='done'?'✓ ':'') + d.label)
