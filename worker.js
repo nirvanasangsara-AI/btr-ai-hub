@@ -66,13 +66,14 @@ export default {
 
       // 구독 고정비 config (수동 관리)
       const SUBSCRIPTIONS = {
-        anthropic: { name: 'Claude Pro', usd: 20, currency: 'USD' },
-        openai:    { name: 'ChatGPT Plus', usd: 20, currency: 'USD' },
-        gemini:    { name: 'Gemini Advanced', usd: 20, currency: 'USD' },
-        perplexity:{ name: 'Perplexity Pro', usd: 20, currency: 'USD' },
-        deepseek:  { name: null, usd: 0, currency: 'USD' },   // 구독 없음, API only
-        railway:   { name: 'Railway', usd: 10, currency: 'USD' },
-        cloudflare:{ name: 'Cloudflare', usd: 0, currency: 'USD' },
+        chatgpt_pro:  { name: 'ChatGPT Pro', usd: 200, currency: 'USD' },
+        claude_pro:   { name: 'Claude Pro', usd: 20, currency: 'USD' },
+        gemini:       { name: 'Gemini Advanced', usd: 20, currency: 'USD' },
+        perplexity:   { name: 'Perplexity Pro', usd: 20, currency: 'USD' },
+        elevenlabs:   { name: 'ElevenLabs Creator', usd: 22, currency: 'USD' },
+        manus:        { name: 'Manus Pro', usd: 0, currency: 'USD', note: '크레딧제' },
+        railway:      { name: 'Railway', usd: 0, currency: 'USD', note: 'Trial' },
+        cloudflare:   { name: 'Cloudflare', usd: 0, currency: 'USD', note: 'Free' },
       };
 
       // API 사용량 조회
