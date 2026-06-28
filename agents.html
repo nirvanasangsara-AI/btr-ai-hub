@@ -116,6 +116,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 const STATUS_COLOR = { running:'#60a5fa', done:'#4ade80', blocked:'#f87171', todo:'#fbbf24', ready:'#fbbf24' };
 const STATUS_BG = { running:'#1e3a5f', done:'#14532d', blocked:'#7f1d1d', todo:'#78350f', ready:'#78350f' };
 const AGENT_NAMES = ['researcher','developer','data','reviewer','default'];
+const W=window.innerWidth, H=window.innerHeight;
+const CX=W/2, CY=H/2;
 
 let simulation, svg, nodeG, linkG, particleG;
 let tooltipEl = document.getElementById('tooltip');
@@ -158,10 +160,12 @@ function initSVG(){
   nodeG = svg.append('g');
 
   simulation = d3.forceSimulation()
-    .force('link', d3.forceLink().id(d=>d.id).distance(d=>d.source.type==='agent'?170:110).strength(0.4))
-    .force('charge', d3.forceManyBody().strength(-700))
-    .force('center', d3.forceCenter(window.innerWidth/2, window.innerHeight/2))
-    .force('collision', d3.forceCollide().radius(d=>d.type==='agent'?50:28));
+    .force('link', d3.forceLink().id(d=>d.id).distance(d=>d.source.type==='agent'?170:110).strength(0.6))
+    .force('charge', d3.forceManyBody().strength(-800))
+    .force('center', d3.forceCenter(CX, CY).strength(0.3))
+    .force('collision', d3.forceCollide().radius(d=>d.type==='agent'?55:30))
+    .force('x', d3.forceX(CX).strength(0.03))
+    .force('y', d3.forceY(CY).strength(0.03));
 
   window.addEventListener('resize',()=>{
     simulation.force('center',d3.forceCenter(window.innerWidth/2,window.innerHeight/2));
@@ -210,7 +214,10 @@ function render(data){
 
   const old=(simulation.nodes&&simulation.nodes())||[];
   const pm=Object.fromEntries(old.map(n=>[n.id,{x:n.x,y:n.y,vx:n.vx,vy:n.vy}]));
-  for(const n of nodes)if(pm[n.id])Object.assign(n,pm[n.id]);
+  for(const n of nodes){
+    if(pm[n.id]) Object.assign(n,pm[n.id]);
+    else { n.x=CX+(Math.random()-0.5)*200; n.y=CY+(Math.random()-0.5)*200; } // start near center
+  }
 
   simulation.nodes(nodes);
   simulation.force('link').links(links);
@@ -268,8 +275,11 @@ function render(data){
     .attr('filter','url(#glow-purple)');
   nm.select('circle.a-ring')
     .attr('r',28).attr('fill','none').attr('stroke','#a78bfa').attr('stroke-width',1.5).attr('stroke-dasharray','6 12').attr('opacity',0.5);
+  // Agent sphere - solid fallback + gradient
   nm.select('circle.a-sphere')
-    .attr('r',24).attr('fill','url(#grad-agent)');
+    .attr('r',24)
+    .attr('fill','#8b5cf6')
+    .style('fill','url(#grad-agent)');
   nm.select('text.a-label')
     .text(d=>d.label.toUpperCase()).attr('text-anchor','middle')
     .attr('fill','rgba(220,220,240,0.9)').attr('font-size','.55rem').attr('font-weight','700').attr('letter-spacing','1px');
