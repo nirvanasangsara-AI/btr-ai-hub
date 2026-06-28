@@ -3,279 +3,264 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>BTR 에이전트 대시보드</title>
+<title>BTR AI — 에이전트 네트워크</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;overflow:hidden}
+body{font-family:'SF Mono','JetBrains Mono','Noto Sans KR',monospace;background:#050914;color:#e2e8f0;overflow:hidden;height:100vh}
 
-.header{padding:10px 16px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between}
-.logo{font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:-.5px}
-.logo span{color:#facc15}
-.logo a{color:inherit;text-decoration:none;font-size:.75rem;color:#475569;margin-left:10px}
-.logo a:hover{color:#94a3b8}
-.status-bar{display:flex;align-items:center;gap:14px;font-size:.7rem;color:#475569}
-.dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px}
-.dot.live{background:#4ade80;animation:pulse 2s infinite}
-.dot.idle{background:#475569}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.updated{font-size:.65rem;color:#334155}
+/* HUD scanline overlay */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:100}
 
-#graph-container{width:100vw;height:calc(100vh - 44px);position:relative}
+.header{position:fixed;top:0;left:0;right:0;z-index:50;padding:8px 16px;background:rgba(5,9,20,0.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:.85rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(139,92,246,0.8)}
+.logo em{font-style:normal;color:#c4b5fd}
+.logo a{color:rgba(148,163,184,0.4);text-decoration:none;font-size:.6rem;margin-left:10px;letter-spacing:0}
+.status{display:flex;align-items:center;gap:12px;font-size:.6rem;color:rgba(148,163,184,0.5)}
+.dot{width:6px;height:6px;border-radius:50%}
+.dot.live{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.6)}
+.dot.dead{background:#ef4444}
 
-svg{width:100%;height:100%}
+#graph-container{width:100vw;height:100vh;position:relative}
 
-/* Legend */
-.legend{position:absolute;top:10px;right:14px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:.65rem;color:#94a3b8}
-.legend-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-.legend-row:last-child{margin-bottom:0}
-.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+/* HUD panel */
+.hud-panel{position:absolute;background:rgba(10,14,26,0.85);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 14px;font-size:.6rem;color:rgba(180,200,230,0.6)}
+.hud-top-left{top:56px;left:12px}
+.hud-top-right{top:56px;right:12px}
+.hud-bottom{position:absolute;bottom:12px;left:12px;right:12px;display:flex;gap:8px}
+.hud-metric{flex:1;background:rgba(10,14,26,0.85);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 12px;text-align:center}
+.hud-metric .val{font-size:1.4rem;font-weight:700;margin-bottom:2px}
+.hud-metric .lbl{font-size:.55rem;text-transform:uppercase;letter-spacing:1px;color:rgba(148,163,184,0.4)}
+.val.blue{color:#3b82f6;text-shadow:0 0 12px rgba(59,130,246,0.4)}
+.val.green{color:#4ade80;text-shadow:0 0 12px rgba(74,222,128,0.4)}
+.val.red{color:#ef4444;text-shadow:0 0 12px rgba(239,68,68,0.4)}
+.val.amber{color:#f59e0b;text-shadow:0 0 12px rgba(245,158,11,0.4)}
 
-/* Counts banner */
-.counts{position:absolute;top:10px;left:14px;display:flex;gap:8px}
-.count-chip{background:#1e293b;border:1px solid #334155;border-radius:6px;padding:4px 10px;font-size:.65rem;color:#94a3b8;display:flex;align-items:center;gap:5px}
-.count-chip .n{font-size:.9rem;font-weight:700}
-.count-chip .n.running{color:#3b82f6}
-.count-chip .n.done{color:#4ade80}
-.count-chip .n.blocked{color:#ef4444}
-.count-chip .n.todo{color:#f59e0b}
+/* Agent row */
+.agent-row{display:flex;align-items:center;gap:6px;padding:2px 0}
+.agent-row .name{color:rgba(180,200,230,0.7);width:70px;text-align:right;font-size:.58rem}
+.agent-row .bar{flex:1;height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.agent-row .bar-inner{height:100%;border-radius:2px;transition:width .5s}
+
+/* Node styles */
+.agent-name{font-size:.55rem;fill:rgba(200,210,240,0.5);text-anchor:middle}
+.task-label{font-size:.5rem;fill:rgba(148,163,184,0.6);text-anchor:middle}
 
 /* Tooltip */
-.tooltip{position:absolute;pointer-events:none;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 11px;font-size:.68rem;color:#e2e8f0;max-width:220px;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,.5);opacity:0;transition:opacity .15s}
-.tooltip strong{display:block;color:#f1f5f9;margin-bottom:3px;font-size:.72rem}
-.tooltip .assignee{color:#94a3b8;font-size:.62rem}
-.tooltip .summary{color:#64748b;font-size:.62rem;margin-top:3px;border-top:1px solid #334155;padding-top:3px}
+.tooltip{position:absolute;pointer-events:none;background:rgba(10,14,26,0.95);border:1px solid rgba(139,92,246,0.2);border-radius:6px;padding:8px 11px;font-size:.62rem;color:#e2e8f0;max-width:240px;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,.7),0 0 20px rgba(139,92,246,0.1);opacity:0;transition:opacity .12s;z-index:200}
+.tooltip strong{display:block;color:#f1f5f9;margin-bottom:3px;font-size:.68rem}
+.tooltip .meta{color:rgba(148,163,184,0.5);font-size:.55rem}
 
-/* node labels */
-.node-label{font-size:.6rem;fill:#94a3b8;text-anchor:middle;pointer-events:none}
-.agent-label{font-size:.55rem;fill:#475569;text-anchor:middle;pointer-events:none}
+/* HUD animations */
+@keyframes edgeFlow{0%{stroke-dashoffset:20}100%{stroke-dashoffset:0}}
+@keyframes nodePulse{0%,100%{r:6}50%{r:8}}
+@keyframes glowPulse{0%,100%{opacity:0.3}50%{opacity:0.7}}
+@keyframes scanline{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+.hud-scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(139,92,246,0.15),transparent);animation:scanline 4s linear infinite;pointer-events:none;z-index:99}
 
-/* Glow filter */
-.filter-glow{filter:url(#glow)}.filter-glow-blue{filter:url(#glow-blue)}.filter-glow-green{filter:url(#glow-green)}
-/* Edge pulse animation */
-@keyframes edgePulse{0%,100%{opacity:0.4}50%{opacity:1}}
-.edge-pulse{animation:edgePulse 3s ease-in-out infinite}
-/* Particle */
-@keyframes orbit{from{transform:rotate(0deg) translateX(28px)}to{transform:rotate(360deg) translateX(28px)}}
-.particle-ring{animation:orbit 8s linear infinite;transform-origin:center}
-.particle-ring.fast{animation-duration:4s}
-/* Card-style nodes */
-.card-node{filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6))}
-.card-node.running{filter:drop-shadow(0 0 12px rgba(59,130,246,0.5))}
-.card-node.blocked{filter:drop-shadow(0 0 12px rgba(239,68,68,0.5))}
-.empty{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#334155}
-.empty .icon{font-size:3rem;margin-bottom:10px}
-.empty p{font-size:.8rem}
-  .stat-box {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 10px;
-    padding: 16px 20px;
-  }
-  .stat-label { color: #94a3b8; font-size: 12px; margin-bottom: 6px; }
-  .stat-value { color: #f1f5f9; font-size: 28px; font-weight: 700; }
-  .chart-title { color: #94a3b8; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .chart-bar-label { font-size: 10px; fill: #94a3b8; }
-  .chart-axis line, .chart-axis path { stroke: #334155; }
-  .chart-axis text { fill: #64748b; font-size: 10px; }
+/* Mobile responsive */
+@media(max-width:768px){
+  .hud-panel{font-size:.5rem;padding:6px 10px}
+  .hud-metric .val{font-size:1.1rem}
+  .hud-metric .lbl{font-size:.5rem}
+  .agent-row .name{width:50px;font-size:.5rem}
+}
 </style>
 </head>
 <body>
+
 <div class="header">
-  <div class="logo">
-    BTR <span>AI</span> 에이전트
-    <a href="/">← Hub</a>
-  </div>
-  <div class="status-bar">
-    <span id="live-indicator"><span class="dot idle" id="live-dot"></span><span id="live-label">연결 중...</span></span>
-    <span class="updated" id="updated-label"></span>
+  <div class="logo">BTR <em>AI</em> · 에이전트 네트워크<a href="/">← Hub</a></div>
+  <div class="status">
+    <span id="live-dot" class="dot dead"></span>
+    <span id="live-text">OFFLINE</span>
+    <span id="clock">00:00:00</span>
   </div>
 </div>
 
 <div id="graph-container">
-  <div class="counts" id="counts"></div>
-  <div class="legend">
-    <div class="legend-row"><div class="legend-dot" style="background:#3b82f6"></div> running (진행)</div>
-    <div class="legend-row"><div class="legend-dot" style="background:#4ade80"></div> done (완료)</div>
-    <div class="legend-row"><div class="legend-dot" style="background:#ef4444"></div> blocked (차단)</div>
-    <div class="legend-row"><div class="legend-dot" style="background:#f59e0b"></div> todo / ready</div>
-    <div class="legend-row"><div class="legend-dot" style="background:#8b5cf6"></div> 에이전트 노드</div>
+  <div class="hud-scan"></div>
+
+  <!-- Top-left: Agent status -->
+  <div class="hud-panel hud-top-left" id="agent-panel">
+    <div style="font-size:.5rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;color:rgba(139,92,246,0.6)">◈ AGENTS</div>
+    <div id="agent-rows"></div>
   </div>
+
+  <!-- Top-right: Legend -->
+  <div class="hud-panel hud-top-right">
+    <div style="font-size:.5rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;color:rgba(139,92,246,0.6)">◈ STATUS</div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.6)"></div><span style="font-size:.55rem">RUNNING</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.6)"></div><span style="font-size:.55rem">DONE</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,0.6)"></div><span style="font-size:.55rem">BLOCKED</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.6)"></div><span style="font-size:.55rem">TODO</span></div>
+      <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 6px rgba(139,92,246,0.6)"></div><span style="font-size:.55rem">AGENT</span></div>
+    </div>
+  </div>
+
+  <!-- Bottom metrics -->
+  <div class="hud-bottom">
+    <div class="hud-metric"><div class="val blue" id="cnt-running">0</div><div class="lbl">Running</div></div>
+    <div class="hud-metric"><div class="val green" id="cnt-done">0</div><div class="lbl">Done</div></div>
+    <div class="hud-metric"><div class="val red" id="cnt-blocked">0</div><div class="lbl">Blocked</div></div>
+    <div class="hud-metric"><div class="val amber" id="cnt-todo">0</div><div class="lbl">Todo</div></div>
+    <div class="hud-metric"><div class="val" id="cnt-total" style="color:rgba(180,200,230,0.8)">0</div><div class="lbl">Total</div></div>
+  </div>
+
   <div class="tooltip" id="tooltip"></div>
   <svg id="svg"></svg>
-  <div class="empty" id="empty-state" style="display:none">
-    <div class="icon">🤖</div>
-    <p>실행 중인 태스크가 없습니다.<br>Kanban 워커가 시작되면 여기에 표시됩니다.</p>
-  </div>
-</div>
-
-<!-- 통계 섹션 -->
-<div id="stats-section" style="padding:0 24px 32px;">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-    <div class="stat-box">
-      <div class="stat-label">전체 처리 태스크</div>
-      <div class="stat-value" id="stat-all-time">—</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-label">누적 완료</div>
-      <div class="stat-value" id="stat-done-total" style="color:#4ade80">—</div>
-    </div>
-  </div>
-  <div class="chart-title">일별 태스크 현황 (최근 30일)</div>
-  <div id="daily-chart"></div>
-  <div class="chart-title" style="margin-top:20px;">누적 완료 추이</div>
-  <div id="cumulative-chart"></div>
 </div>
 
 <script>
-const STATUS_COLOR = {
-  running: '#3b82f6',
-  done:    '#4ade80',
-  blocked: '#ef4444',
-  todo:    '#f59e0b',
-  ready:   '#f59e0b',
-};
-const AGENT_NODES = ['researcher','developer','data','reviewer','default'];
+const STATUS_COLOR = { running:'#3b82f6', done:'#4ade80', blocked:'#ef4444', todo:'#f59e0b', ready:'#f59e0b' };
 const AGENT_COLOR = '#8b5cf6';
-const AGENT_R = 22;
-const TASK_R = 10;
-const TASK_RECENT_R = 13;
+const AGENT_NAMES = ['researcher','developer','data','reviewer','default'];
+const AGENT_R = 24;
+const TASK_R = 7;
 
-let simulation, svg, linkG, nodeG;
+let simulation, svg, linkG, nodeG, particleG;
 let currentData = {tasks:[], updated_at: null};
 let tooltipEl = document.getElementById('tooltip');
-let lastFetch = 0;
+let clockEl = document.getElementById('clock');
+
+// Clock
+setInterval(()=>{ const d=new Date(); clockEl.textContent=d.toTimeString().slice(0,8); },1000);
 
 function initSVG(){
   svg = d3.select('#svg');
-  // ── Glow filters ──
   const defs = svg.append('defs');
-  [{id:'glow',c:'#8b5cf6'},{id:'glow-blue',c:'#3b82f6'},{id:'glow-green',c:'#4ade80'}].forEach(g=>{
-    const f=defs.append('filter').attr('id',g.id).attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
-    f.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+
+  // Glow filters
+  [{id:'glow-purple',c:'#8b5cf6'},{id:'glow-blue',c:'#3b82f6'},{id:'glow-green',c:'#4ade80'},{id:'glow-red',c:'#ef4444'},{id:'glow-amber',c:'#f59e0b'}].forEach(g=>{
+    const f=defs.append('filter').attr('id',g.id).attr('x','-60%').attr('y','-60%').attr('width','220%').attr('height','220%');
+    f.append('feGaussianBlur').attr('stdDeviation','4').attr('result','blur');
     f.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).enter().append('feMergeNode').attr('in',d=>d);
   });
-  // Edge glow
-  const edgeGlow=defs.append('filter').attr('id','edge-glow').attr('x','-20%').attr('y','-20%').attr('width','140%').attr('height','140%');
-  edgeGlow.append('feGaussianBlur').attr('stdDeviation','2').attr('result','blur');
-  edgeGlow.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).enter().append('feMergeNode').attr('in',d=>d);
 
-  // Arrow marker
-  defs.append('marker').attr('id','arrow').attr('viewBox','0 -4 10 8')
-    .attr('refX',18).attr('refY',0).attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
-    .append('path').attr('d','M0,-4L10,0L0,4').attr('fill','#334155');
+  // Stronger glow for agent halos
+  [{id:'halo-purple',c:'#8b5cf6'},{id:'halo-blue',c:'#3b82f6'}].forEach(g=>{
+    const f=defs.append('filter').attr('id',g.id).attr('x','-100%').attr('y','-100%').attr('width','300%').attr('height','300%');
+    f.append('feGaussianBlur').attr('stdDeviation','8').attr('result','blur');
+    f.append('feMerge').selectAll('feMergeNode').data(['blur','SourceGraphic']).enter().append('feMergeNode').attr('in',d=>d);
+  });
+
+  // Edge gradient
+  const eg = defs.append('linearGradient').attr('id','edge-grad').attr('gradientUnits','userSpaceOnUse');
+  eg.append('stop').attr('offset','0%').attr('stop-color','rgba(139,92,246,0.15)');
+  eg.append('stop').attr('offset','50%').attr('stop-color','rgba(139,92,246,0.4)');
+  eg.append('stop').attr('offset','100%').attr('stop-color','rgba(139,92,246,0.15)');
 
   linkG = svg.append('g').attr('class','links');
+  particleG = svg.append('g').attr('class','particles');
   nodeG = svg.append('g').attr('class','nodes');
 
   simulation = d3.forceSimulation()
-    .force('link', d3.forceLink().id(d=>d.id).distance(d=>d.source.type==='agent'?120:70).strength(0.7))
-    .force('charge', d3.forceManyBody().strength(-320))
-    .force('center', d3.forceCenter(window.innerWidth/2, (window.innerHeight-44)/2))
-    .force('collision', d3.forceCollide().radius(d=>d.type==='agent'?AGENT_R+18:TASK_R+22));
+    .force('link', d3.forceLink().id(d=>d.id).distance(d=>d.source.type==='agent'?140:80).strength(0.6))
+    .force('charge', d3.forceManyBody().strength(-350))
+    .force('center', d3.forceCenter(window.innerWidth/2, window.innerHeight/2))
+    .force('collision', d3.forceCollide().radius(d=>d.type==='agent'?AGENT_R+24:TASK_R+16));
 
   window.addEventListener('resize', ()=>{
-    simulation.force('center', d3.forceCenter(window.innerWidth/2, (window.innerHeight-44)/2));
+    simulation.force('center', d3.forceCenter(window.innerWidth/2, window.innerHeight/2));
     simulation.alpha(0.2).restart();
   });
 }
 
 function buildGraph(tasks){
-  // Build nodes: agent nodes + task nodes
   const agentSet = new Set(tasks.map(t=>t.assignee).filter(Boolean));
-  const agentNodes = [...agentSet].map(id=>({id:'agent:'+id, label:id, type:'agent', tasks:[]}));
+  // Ensure all 5 agent nodes always exist
+  AGENT_NAMES.forEach(a=>agentSet.add(a));
+  const agentNodes = [...agentSet].map(id=>({
+    id:'agent:'+id, label:id, type:'agent',
+    taskCount: tasks.filter(t=>t.assignee===id).length,
+    runningCount: tasks.filter(t=>t.assignee===id && t.status==='running').length
+  }));
   const agentMap = Object.fromEntries(agentNodes.map(n=>[n.label, n]));
 
   const now = Date.now();
   const taskNodes = tasks.map(t=>({
     id: t.id,
-    label: t.title ? t.title.slice(0,28) + (t.title.length>28?'…':'') : t.id,
+    label: t.title ? t.title.slice(0,20) + (t.title.length>20?'…':'') : t.id.slice(0,12),
     type: 'task',
     status: t.status || 'todo',
     assignee: t.assignee,
     summary: t.summary || '',
     started_at: t.started_at,
-    recent: t.started_at && (now/1000 - t.started_at < 3600),
+    recent: t.started_at && (now/1000 - t.started_at < 600),
     raw: t,
   }));
 
-  // edges: task → its agent node + parent→child
   const links = [];
   const taskIds = new Set(tasks.map(t=>t.id));
-
   for(const t of taskNodes){
     if(t.assignee && agentMap[t.assignee]){
       links.push({source:'agent:'+t.assignee, target:t.id, type:'assign'});
     }
   }
-  // parent→child edges between tasks
   for(const t of tasks){
     if(t.parents){
       for(const pid of t.parents){
-        if(taskIds.has(pid)){
-          links.push({source:pid, target:t.id, type:'dep'});
-        }
+        if(taskIds.has(pid)) links.push({source:pid, target:t.id, type:'dep'});
       }
     }
   }
-
-  const nodes = [...agentNodes, ...taskNodes];
-  return {nodes, links};
+  return {nodes: [...agentNodes, ...taskNodes], links, agents: agentNodes};
 }
 
-function updateCounts(tasks){
-  const counts = {running:0,done:0,blocked:0,todo:0};
-  for(const t of tasks){
-    const s = t.status||'todo';
-    if(counts[s]!==undefined) counts[s]++;
-    else counts.todo++;
-  }
-  document.getElementById('counts').innerHTML = Object.entries(counts)
-    .map(([s,n])=>`<div class="count-chip"><span class="n ${s}">${n}</span>${s}</div>`)
-    .join('');
+function updateHUD(tasks, agents){
+  const cnt = {running:0,done:0,blocked:0,todo:0};
+  for(const t of tasks){ const s=t.status||'todo'; cnt[s]=(cnt[s]||0)+1; }
+  document.getElementById('cnt-running').textContent = cnt.running;
+  document.getElementById('cnt-done').textContent = cnt.done;
+  document.getElementById('cnt-blocked').textContent = cnt.blocked;
+  document.getElementById('cnt-todo').textContent = cnt.todo;
+  document.getElementById('cnt-total').textContent = tasks.length;
+
+  // Agent panel
+  const maxTasks = Math.max(1, ...agents.map(a=>a.taskCount));
+  document.getElementById('agent-rows').innerHTML = agents.map(a=>`
+    <div class="agent-row">
+      <span class="name">${a.label}</span>
+      <div class="bar"><div class="bar-inner" style="width:${(a.taskCount/maxTasks*100).toFixed(0)}%;background:${a.runningCount?'#3b82f6':'rgba(139,92,246,0.5)'}"></div></div>
+      <span style="font-size:.5rem;color:rgba(148,163,184,0.4);width:20px;text-align:right">${a.taskCount}</span>
+    </div>
+  `).join('');
 }
 
 function render(data){
   const tasks = data.tasks || [];
   currentData = data;
+  const {nodes, links, agents} = buildGraph(tasks);
+  updateHUD(tasks, agents);
 
-  updateCounts(tasks);
-
-  const emptyEl = document.getElementById('empty-state');
-  if(!tasks.length){ emptyEl.style.display='block'; return; }
-  emptyEl.style.display='none';
-
-  const {nodes, links} = buildGraph(tasks);
-
-  // Preserve positions of existing nodes
+  // Preserve positions
   const oldNodes = (simulation.nodes && simulation.nodes()) || [];
   const posMap = Object.fromEntries(oldNodes.map(n=>[n.id,{x:n.x,y:n.y,vx:n.vx,vy:n.vy}]));
-  for(const n of nodes){
-    if(posMap[n.id]){ Object.assign(n, posMap[n.id]); }
-  }
+  for(const n of nodes){ if(posMap[n.id]) Object.assign(n, posMap[n.id]); }
 
   simulation.nodes(nodes);
   simulation.force('link').links(links);
-  simulation.alpha(0.3).restart();
+  simulation.alpha(0.4).restart();
 
-  // Links
-  const linkSel = linkG.selectAll('line').data(links, d=>d.source+'-'+d.target);
-  linkSel.enter().append('line')
-    .attr('class', d=>d.type==='assign' && d.source?.type==='agent' ? 'edge-pulse' : '')
-    .attr('stroke', d=>d.type==='assign'?'#1e3a5f':'#334155')
-    .attr('stroke-width', d=>d.type==='assign'?2:1.5)
-    .attr('stroke-dasharray', d=>d.type==='dep'?'4 3':null)
-    .attr('marker-end', d=>d.type==='assign'?null:'url(#arrow)')
-    .attr('opacity',0.6)
-    .attr('filter', d=>d.type==='assign' && d.target?.status==='running' ? 'url(#edge-glow)' : null)
-    .merge(linkSel);
+  // ── Links with dash animation ──
+  const linkSel = linkG.selectAll('line').data(links, d=>d.source.id+'-'+d.target.id);
   linkSel.exit().remove();
+  linkSel.enter().append('line')
+    .attr('stroke', d=>d.type==='assign'?'url(#edge-grad)':'rgba(51,65,85,0.3)')
+    .attr('stroke-width', d=>d.type==='assign'?1.5:1)
+    .attr('stroke-dasharray', d=>d.type==='assign'?'6 4':'4 6')
+    .attr('opacity', d=>d.type==='assign'?0.6:0.3)
+    .merge(linkSel);
 
-  // Nodes
+  // ── Nodes ──
   const nodeSel = nodeG.selectAll('g.node-g').data(nodes, d=>d.id);
+
+  nodeSel.exit().transition().duration(300).attr('opacity',0).remove();
 
   const nodeEnter = nodeSel.enter().append('g')
     .attr('class','node-g')
+    .attr('opacity',0)
     .call(d3.drag()
       .on('start', (evt,d)=>{ if(!evt.active) simulation.alphaTarget(0.2).restart(); d.fx=d.x; d.fy=d.y; })
       .on('drag',  (evt,d)=>{ d.fx=evt.x; d.fy=evt.y; })
@@ -284,59 +269,88 @@ function render(data){
     .on('mousemove', moveTooltip)
     .on('mouseout', hideTooltip);
 
-  nodeEnter.append('circle').attr('class','node-bg');
-  nodeEnter.append('circle').attr('class','node-main');
-  // Agent: glow ring + particle
-  nodeEnter.filter(d=>d.type==='agent').append('circle').attr('class','glow-ring');
-  nodeEnter.filter(d=>d.type==='agent').append('circle').attr('class','particle particle-ring');
-  nodeEnter.filter(d=>d.type==='agent').append('circle').attr('class','particle particle-ring fast');
-  nodeEnter.append('text').attr('class','node-label');
-  nodeEnter.append('text').attr('class','agent-label').attr('dy','-1.1em');
+  nodeEnter.transition().duration(500).attr('opacity',1);
+
+  // Agent nodes
+  const agentEnter = nodeEnter.filter(d=>d.type==='agent');
+  agentEnter.append('circle').attr('class','halo');
+  agentEnter.append('circle').attr('class','core');
+  agentEnter.append('circle').attr('class','ring');
+  agentEnter.append('text').attr('class','agent-name').attr('dy','.3em');
+
+  // Task nodes
+  const taskEnter = nodeEnter.filter(d=>d.type==='task');
+  taskEnter.append('circle').attr('class','task-glow');
+  taskEnter.append('circle').attr('class','task-core');
 
   const nodeMerge = nodeEnter.merge(nodeSel);
 
-  // Background halo
-  nodeMerge.select('circle.node-bg')
-    .attr('r', d=>d.type==='agent' ? AGENT_R+8 : (d.recent ? TASK_RECENT_R+5 : TASK_R+5))
-    .attr('fill', d=>d.type==='agent' ? 'rgba(139,92,246,0.15)' : 'none')
-    .attr('stroke', 'none');
+  // Agent halo
+  nodeMerge.select('circle.halo')
+    .attr('r', AGENT_R+10)
+    .attr('fill', 'none')
+    .attr('stroke', '#8b5cf6')
+    .attr('stroke-width', 2)
+    .attr('opacity', 0.15)
+    .attr('filter', 'url(#halo-purple)');
 
-  // Main circle
-  nodeMerge.select('circle.node-main')
-    .attr('r', d=>d.type==='agent' ? AGENT_R : (d.recent ? TASK_RECENT_R : TASK_R))
-    .attr('fill', d=>d.type==='agent' ? AGENT_COLOR : (STATUS_COLOR[d.status]||'#f59e0b'))
-    .attr('opacity', d=>d.type==='agent' ? 0.95 : (d.status==='done' ? 0.5 : 0.85))
-    .attr('stroke', d=>d.type==='agent' ? '#a78bfa' : 'none')
-    .attr('stroke-width', d=>d.type==='agent' ? 2 : 0)
-    .attr('filter', d=>d.type==='agent' ? 'url(#glow)' : (d.status==='running'?'url(#glow-blue)':(d.status==='done'?'url(#glow-green)':null)));
+  // Agent core
+  nodeMerge.select('circle.core')
+    .attr('r', AGENT_R)
+    .attr('fill', 'rgba(139,92,246,0.3)')
+    .attr('stroke', '#a78bfa')
+    .attr('stroke-width', 2)
+    .attr('filter', 'url(#glow-purple)');
 
-  // Glow ring (agent only)
-  nodeMerge.select('circle.glow-ring')
-    .attr('r', AGENT_R+4)
+  // Agent ring
+  nodeMerge.select('circle.ring')
+    .attr('r', AGENT_R+3)
     .attr('fill', 'none')
     .attr('stroke', '#c4b5fd')
-    .attr('stroke-width', 1)
-    .attr('opacity', 0.6);
+    .attr('stroke-width', 0.5)
+    .attr('stroke-dasharray', '4 8');
 
-  // Particles (agent only)
-  nodeMerge.selectAll('circle.particle')
-    .attr('r', 2.5)
-    .attr('fill', '#c4b5fd')
-    .attr('opacity', 0.8);
+  // Task glow
+  nodeMerge.select('circle.task-glow')
+    .attr('r', TASK_R+4)
+    .attr('fill', 'none')
+    .attr('stroke', d=>STATUS_COLOR[d.status]||'#f59e0b')
+    .attr('stroke-width', 2)
+    .attr('opacity', d=>d.status==='running'?0.4:0.15)
+    .attr('filter', d=>d.status==='running'?'url(#glow-blue)':(d.status==='done'?'url(#glow-green)':null));
 
-  nodeMerge.select('text.node-label')
-    .text(d=>d.type==='agent' ? d.label : (d.status==='running'?'▶ ':d.status==='blocked'?'⛔ ':d.status==='done'?'✓ ':'') + d.label)
-    .attr('dy', d=>d.type==='agent' ? (AGENT_R+12)+'px' : (TASK_R+11)+'px');
+  // Task core
+  nodeMerge.select('circle.task-core')
+    .attr('r', d=>d.recent?TASK_R+2:TASK_R)
+    .attr('fill', d=>STATUS_COLOR[d.status]||'#f59e0b')
+    .attr('opacity', d=>d.status==='done'?0.4:0.9);
 
-  nodeMerge.select('text.agent-label')
-    .text(d=>d.type==='agent' ? '에이전트' : '');
+  // Agent label
+  nodeMerge.select('text.agent-name')
+    .text(d=>d.label.toUpperCase());
 
-  nodeSel.exit().remove();
+  // ── Edge particles ──
+  const assignLinks = links.filter(l=>l.type==='assign');
+  particleG.selectAll('circle.ep').remove();
+  particleG.selectAll('circle.ep')
+    .data(assignLinks)
+    .enter().append('circle')
+    .attr('class','ep')
+    .attr('r', 1.5)
+    .attr('fill', '#a78bfa')
+    .attr('opacity', 0.7);
 
   simulation.on('tick', ()=>{
     linkG.selectAll('line')
       .attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
       .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+
+    // Animate particles along edges
+    const t = (Date.now()/3000) % 1;
+    particleG.selectAll('circle.ep')
+      .attr('cx', d=>d.source.x + (d.target.x-d.source.x)*t)
+      .attr('cy', d=>d.source.y + (d.target.y-d.source.y)*t);
+
     nodeG.selectAll('g.node-g')
       .attr('transform',d=>`translate(${d.x},${d.y})`);
   });
@@ -344,146 +358,40 @@ function render(data){
 
 function showTooltip(evt, d){
   if(d.type==='agent'){
-    tooltipEl.innerHTML = `<strong>🤖 ${d.label}</strong><span class="assignee">에이전트 노드</span>`;
+    tooltipEl.innerHTML = `<strong>◈ ${d.label.toUpperCase()}</strong><span class="meta">에이전트 · 태스크 ${d.taskCount}개 (진행 ${d.runningCount})</span>`;
   } else {
-    const s = d.status||'todo';
-    const sLabel = {running:'🔵 진행',done:'🟢 완료',blocked:'🔴 차단',todo:'🟡 대기',ready:'🟡 준비'}[s]||s;
-    tooltipEl.innerHTML = `
-      <strong>${d.label}</strong>
-      <span class="assignee">${sLabel} · ${d.assignee||'-'}</span>
-      ${d.summary ? `<div class="summary">${d.summary.slice(0,120)}</div>` : ''}
-      <div style="font-size:.58rem;color:#334155;margin-top:4px">${d.id}</div>
-    `;
+    const s=d.status||'todo';
+    const sLabel={running:'● 진행',done:'○ 완료',blocked:'◆ 차단',todo:'◇ 대기',ready:'◇ 준비'}[s]||s;
+    tooltipEl.innerHTML = `<strong>${d.label}</strong><span class="meta">${sLabel} · ${d.assignee||'-'}</span>${d.summary?`<div style="font-size:.55rem;color:rgba(148,163,184,0.5);margin-top:4px">${d.summary.slice(0,100)}</div>`:''}`;
   }
   tooltipEl.style.opacity='1';
   moveTooltip(evt);
 }
 function moveTooltip(evt){
-  let x = evt.clientX+12, y = evt.clientY-10;
-  if(x+230>window.innerWidth) x = evt.clientX-230;
+  let x=evt.clientX+12, y=evt.clientY-10;
+  if(x+240>window.innerWidth) x=evt.clientX-240;
   tooltipEl.style.left=x+'px'; tooltipEl.style.top=y+'px';
 }
 function hideTooltip(){ tooltipEl.style.opacity='0'; }
 
-// Fetch from CF API
 async function fetchState(){
   try{
     const r = await fetch('/api/kanban-state', {cache:'no-store'});
     if(!r.ok) throw new Error(r.status);
     const data = await r.json();
-    lastFetch = Date.now();
     document.getElementById('live-dot').className='dot live';
-    document.getElementById('live-label').textContent='실시간';
-    if(data.updated_at){
-      const d = new Date(data.updated_at);
-      document.getElementById('updated-label').textContent='마지막 업데이트: '+d.toLocaleTimeString('ko-KR');
-    }
+    document.getElementById('live-text').textContent='LIVE';
     render(data);
   } catch(e){
-    document.getElementById('live-dot').className='dot idle';
-    document.getElementById('live-label').textContent='연결 오류';
-    console.error('fetch error:', e);
+    document.getElementById('live-dot').className='dot dead';
+    document.getElementById('live-text').textContent='OFFLINE';
+    console.error('fetch:',e.message);
   }
 }
 
 initSVG();
 fetchState();
-setInterval(fetchState, 15000); // 15초마다 폴링
-
-// ── 히스토리 차트 ──────────────────────────────────────────
-async function fetchHistory() {
-  try {
-    const r = await fetch('/api/kanban-history');
-    if (!r.ok) return;
-    const data = await r.json();
-    renderCharts(data.daily || []);
-  } catch(e) { console.warn('history fetch failed', e); }
-}
-
-function renderCharts(daily) {
-  if (!daily.length) return;
-  const last30 = daily.slice(-30);
-
-  // 요약 카드
-  const latest = last30[last30.length - 1] || {};
-  document.getElementById('stat-all-time').textContent = latest.all_time_total ?? '—';
-  document.getElementById('stat-done-total').textContent = latest.done_total ?? '—';
-
-  // 공통 크기
-  const W = document.getElementById('daily-chart').clientWidth || 600;
-  const H = 160, ml = 40, mr = 16, mt = 10, mb = 40;
-  const w = W - ml - mr, h = H - mt - mb;
-
-  // ① 일별 스택 바 차트
-  {
-    d3.select('#daily-chart svg').remove();
-    const svg = d3.select('#daily-chart').append('svg').attr('width', W).attr('height', H);
-    const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
-
-    const keys = ['running','blocked','todo','done'];
-    const colors = {running:'#3b82f6', blocked:'#ef4444', todo:'#f59e0b', done:'#4ade80'};
-    const stacked = d3.stack().keys(keys)(last30);
-    const xScale = d3.scaleBand().domain(last30.map(d=>d.date)).range([0,w]).padding(0.25);
-    const yMax = d3.max(last30, d => (d.running||0)+(d.blocked||0)+(d.todo||0)+(d.done||0));
-    const yScale = d3.scaleLinear().domain([0, yMax||1]).range([h,0]);
-
-    stacked.forEach(layer => {
-      g.selectAll(`.bar-${layer.key}`)
-        .data(layer)
-        .join('rect')
-        .attr('x', d => xScale(d.data.date))
-        .attr('y', d => yScale(d[1]))
-        .attr('height', d => yScale(d[0]) - yScale(d[1]))
-        .attr('width', xScale.bandwidth())
-        .attr('fill', colors[layer.key])
-        .attr('opacity', 0.85);
-    });
-
-    // x축 날짜 (7일 간격)
-    g.append('g').attr('class','chart-axis').attr('transform',`translate(0,${h})`)
-      .call(d3.axisBottom(xScale).tickValues(last30.filter((_,i)=>i%7===0).map(d=>d.date))
-        .tickFormat(d => d.slice(5)));
-
-    // y축
-    g.append('g').attr('class','chart-axis').call(d3.axisLeft(yScale).ticks(4));
-  }
-
-  // ② 누적 완료 라인 차트
-  {
-    d3.select('#cumulative-chart svg').remove();
-    const svg = d3.select('#cumulative-chart').append('svg').attr('width', W).attr('height', H);
-    const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
-
-    const xScale = d3.scalePoint().domain(last30.map(d=>d.date)).range([0,w]);
-    const yMax = d3.max(last30, d => d.done_total || 0);
-    const yScale = d3.scaleLinear().domain([0, yMax||1]).range([h,0]);
-
-    const line = d3.line().x(d=>xScale(d.date)).y(d=>yScale(d.done_total||0)).curve(d3.curveMonotoneX);
-
-    // 그라데이션
-    const grad = svg.append('defs').append('linearGradient').attr('id','cgrad').attr('x1','0').attr('x2','0').attr('y1','0').attr('y2','1');
-    grad.append('stop').attr('offset','0%').attr('stop-color','#4ade80').attr('stop-opacity',0.3);
-    grad.append('stop').attr('offset','100%').attr('stop-color','#4ade80').attr('stop-opacity',0);
-
-    const area = d3.area().x(d=>xScale(d.date)).y0(h).y1(d=>yScale(d.done_total||0)).curve(d3.curveMonotoneX);
-    g.append('path').datum(last30).attr('fill','url(#cgrad)').attr('d',area).attr('transform',`translate(0,0)`);
-    g.append('path').datum(last30).attr('fill','none').attr('stroke','#4ade80').attr('stroke-width',2).attr('d',line);
-
-    // 마지막 값 라벨
-    const last = last30[last30.length-1];
-    g.append('text').attr('x',xScale(last.date)).attr('y',yScale(last.done_total||0)-8)
-      .attr('text-anchor','middle').attr('fill','#4ade80').attr('font-size','11px')
-      .text(last.done_total||0);
-
-    g.append('g').attr('class','chart-axis').attr('transform',`translate(0,${h})`)
-      .call(d3.axisBottom(xScale).tickValues(last30.filter((_,i)=>i%7===0).map(d=>d.date))
-        .tickFormat(d=>d.slice(5)));
-    g.append('g').attr('class','chart-axis').call(d3.axisLeft(yScale).ticks(4));
-  }
-}
-
-fetchHistory();
-setInterval(fetchHistory, 60000); // 1분마다 갱신
+setInterval(fetchState, 3000);
 </script>
 </body>
 </html>
