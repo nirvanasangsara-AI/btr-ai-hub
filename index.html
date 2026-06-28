@@ -241,15 +241,17 @@ function applyOwnerView() {
 
 // ── AI 비용 로드 ──────────────────────────────────────────
 const COST_CONFIG = [
-  { key:'hermes',    label:'Hermes / Claude',    emoji:'🤖', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage',             note:'Hermes state.db 자동조회' },
-  { key:'anthropic', label:'Anthropic (Claude)', emoji:'🤖', sub:20,  subName:'Claude Pro',        apiAuto:false, dashboard:'https://console.anthropic.com/settings/usage' },
-  { key:'openai',    label:'OpenAI (GPT)',       emoji:'🤖', sub:20,  subName:'ChatGPT Plus',      apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음 — 수동입력' },
-  { key:'gemini',    label:'Google Gemini',      emoji:'🔵', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing' },
-  { key:'manus',     label:'Manus Pro',          emoji:'🦾', sub:0,   subName:'Manus Pro',         apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249 },
-  { key:'deepseek',  label:'DeepSeek',           emoji:'🐋', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage' },
-  { key:'perplexity',label:'Perplexity Pro',     emoji:'🔍', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api' },
-  { key:'railway',   label:'Railway',            emoji:'🚂', sub:10,  subName:'서버 호스팅',        apiAuto:false, dashboard:'https://railway.app/dashboard',                             isInfra:true, note:'403 — 수동입력' },
-  { key:'cloudflare',label:'Cloudflare',         emoji:'☁️', sub:0,   subName:null,                apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier' },
+  { key:'hermes',      label:'Hermes / Claude',    emoji:'🤖', sub:0,   subName:null,               apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage',             note:'Hermes state.db 자동조회' },
+  { key:'openrouter',  label:'OpenRouter',          emoji:'🔀', sub:0,   subName:null,               apiAuto:true,  dashboard:'https://openrouter.ai/settings/credits',                    note:'이달 사용량 자동조회' },
+  { key:'anthropic',   label:'Anthropic (Claude)',  emoji:'🤖', sub:20,  subName:'Claude Pro',       apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage' },
+  { key:'openai',      label:'OpenAI (GPT)',        emoji:'🤖', sub:20,  subName:'ChatGPT Plus',     apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음 — 수동입력' },
+  { key:'gemini',      label:'Google Gemini',       emoji:'🔵', sub:20,  subName:'Gemini Advanced',  apiAuto:false, dashboard:'https://console.cloud.google.com/billing' },
+  { key:'manus',       label:'Manus Pro',           emoji:'🦾', sub:0,   subName:'Manus Pro',        apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249 },
+  { key:'deepseek',    label:'DeepSeek',            emoji:'🐋', sub:0,   subName:null,               apiAuto:true,  dashboard:'https://platform.deepseek.com/usage',                       note:'잔액 자동조회 (고정값 fallback $9)' },
+  { key:'elevenlabs',  label:'ElevenLabs',          emoji:'🎙️', sub:2,   subName:'Starter',          apiAuto:false, dashboard:'https://elevenlabs.io/subscription',                        note:'$2/월 고정 구독' },
+  { key:'perplexity',  label:'Perplexity Pro',      emoji:'🔍', sub:20,  subName:'Perplexity Pro',   apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api' },
+  { key:'railway',     label:'Railway',             emoji:'🚂', sub:10,  subName:'서버 호스팅',       apiAuto:false, dashboard:'https://railway.app/dashboard',                             isInfra:true, note:'403 — 수동입력' },
+  { key:'cloudflare',  label:'Cloudflare',          emoji:'☁️', sub:0,   subName:null,               apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier' },
 ];
 
 // 수동 입력 저장소 (sessionStorage)
@@ -293,6 +295,26 @@ async function loadAiCosts() {
         apiNote = wd.api.month ? ` (${wd.api.month})` : '';
       } else {
         apiLabel = wd.api.note || '데이터 없음';
+        apiClass = 'loading';
+      }
+    } else if (cfg.key === 'openrouter' && wd && wd.api) {
+      if (wd.api.usage_usd !== undefined && wd.api.usage_usd !== null) {
+        apiUsd = wd.api.usage_usd;
+        apiLabel = `$${Number(apiUsd).toFixed(4)}`;
+        apiClass = '';
+        apiNote = wd.api.limit_usd ? ` (한도 $${wd.api.limit_usd})` : '';
+      } else {
+        apiLabel = wd.api.error || '조회 실패';
+        apiClass = 'loading';
+      }
+    } else if (cfg.key === 'anthropic' && wd && wd.api) {
+      if (wd.api.estimated_usd !== undefined && wd.api.estimated_usd !== null) {
+        apiUsd = wd.api.estimated_usd;
+        apiLabel = `~$${Number(apiUsd).toFixed(2)}`;
+        apiClass = '';
+        apiNote = ' (추정)';
+      } else if (wd.api.error) {
+        apiLabel = wd.api.error;
         apiClass = 'loading';
       }
     } else if (cfg.key === 'deepseek' && wd && wd.api && wd.api.balance_usd !== undefined && wd.api.balance_usd !== null) {
@@ -348,7 +370,8 @@ async function loadAiCosts() {
       </div>` : '';
 
     // API행: 자동조회 서비스이거나, 수동입력값이 있으면 무조건 표시
-    const showApiRow = cfg.apiAuto || cfg.key === 'anthropic' || cfg.key === 'gemini' || manual[cfg.key] !== undefined;
+    const showApiRow = cfg.apiAuto || cfg.key === 'anthropic' || cfg.key === 'openrouter' ||
+      cfg.key === 'gemini' || manual[cfg.key] !== undefined;
     const apiRow = (showApiRow && !cfg.isInfra) ? `
       <div class="cost-row">
         <span class="cost-row-label"><span class="cost-badge badge-api">API</span>이달 사용${apiNote}</span>
