@@ -196,30 +196,30 @@ function render(data){
 
   // Agent glow
   nm.filter(d=>d.type==='agent').select('circle.glow')
-    .attr('r',40).attr('fill','none').attr('stroke','#8b5cf6').attr('stroke-width',8).attr('opacity',0.35)
+    .attr('r',30).attr('fill','none').attr('stroke','#8b5cf6').attr('stroke-width',6).attr('opacity',0.3)
     .attr('filter','url(#g-purple)');
   // Agent sphere
   nm.filter(d=>d.type==='agent').select('circle.sphere')
-    .attr('r',28).attr('fill','url(#grad-agent)').attr('filter','url(#sh)').attr('stroke','#c4b5fd').attr('stroke-width',2);
+    .attr('r',20).attr('fill','url(#grad-agent)').attr('filter','url(#sh)').attr('stroke','#c4b5fd').attr('stroke-width',1.5);
   // Agent label
   nm.filter(d=>d.type==='agent').select('text.lbl')
     .text(d=>d.label.toUpperCase()).attr('text-anchor','middle')
-    .attr('fill','#e2e8f0').attr('font-size','.6rem').attr('font-weight','700');
+    .attr('fill','#e2e8f0').attr('font-size','.5rem').attr('font-weight','700');
 
   // Task glow
   nm.filter(d=>d.type==='task').select('circle.glow')
-    .attr('r',20).attr('fill','none')
-    .attr('stroke',d=>STATUS_COLOR[d.status]||'#f59e0b').attr('stroke-width',6).attr('opacity',0.4)
+    .attr('r',14).attr('fill','none')
+    .attr('stroke',d=>STATUS_COLOR[d.status]||'#f59e0b').attr('stroke-width',4).attr('opacity',0.35)
     .attr('filter',d=>d.status==='running'?'url(#g-blue)':(d.status==='done'?'url(#g-green)':(d.status==='blocked'?'url(#g-red)':null)));
   // Task sphere
   const gm={running:'grad-running',done:'grad-done',blocked:'grad-blocked',todo:'grad-todo',ready:'grad-todo'};
   nm.filter(d=>d.type==='task').select('circle.sphere')
-    .attr('r',14).attr('fill',d=>`url(#${gm[d.status]||'grad-todo'})`).attr('filter','url(#sh)')
+    .attr('r',10).attr('fill',d=>`url(#${gm[d.status]||'grad-todo'})`).attr('filter','url(#sh)')
     .attr('opacity',d=>d.status==='done'?0.5:1);
   // Task label
   nm.filter(d=>d.type==='task').select('text.lbl')
     .text(d=>d.label).attr('text-anchor','middle')
-    .attr('fill','rgba(200,210,240,0.5)').attr('font-size','.45rem').attr('dy','2em');
+    .attr('fill','rgba(200,210,240,0.5)').attr('font-size','.4rem').attr('dy','1.8em');
 
   // Edge particles
   const al=links.filter(l=>l.type==='assign');
