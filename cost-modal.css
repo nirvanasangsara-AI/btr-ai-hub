@@ -1,0 +1,93 @@
+/* AI 비용 상세 모달 스타일 */
+.cost-detail-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.cost-detail-modal.open {
+  display: flex;
+}
+.cost-detail-content {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 24px 28px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.cost-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #334155;
+}
+.cost-detail-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cost-detail-close {
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.cost-detail-close:hover {
+  background: #0f172a;
+  color: #94a3b8;
+}
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.transaction-item {
+  background: #0f172a;
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.transaction-date {
+  font-size: .78rem;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+.transaction-amount {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #4ade80;
+  font-variant-numeric: tabular-nums;
+}
+.transaction-desc {
+  font-size: .72rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #475569;
+  font-size: .85rem;
+}

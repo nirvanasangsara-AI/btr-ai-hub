@@ -4,6 +4,8 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>BTR AI Hub</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="stylesheet" href="/cost-modal.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
@@ -58,10 +60,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
   .sparkline{height:38px}
   .spark-num{font-size:.5rem;min-height:8px}
   .sparkline-bar{width:6px}
+  /* 비용 카드도 auto-fill로 통일 (위와 열 수 맞춤) */
+  .cost-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
 }
 
 /* 오너뷰 토글 버튼 */
 .toggle-vis{position:absolute;top:10px;right:10px;font-size:.7rem;padding:2px 8px;border-radius:6px;border:1px solid #374151;background:#0f172a;color:#6b7280;cursor:pointer;z-index:2;transition:.15s}
+
+/* API 비용 카드 */
+.cost-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:0 28px 20px}
+@media(min-width:640px){.cost-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
+.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:12px;transition:border-color .15s}
+@media(min-width:640px){.cost-card{padding:16px}}
+.cost-card:hover{border-color:#4ade80}
 .toggle-vis:hover{border-color:#6b7280;color:#94a3b8}
 .toggle-vis.visible{border-color:#1d4ed8;color:#60a5fa}
 
@@ -73,10 +84,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 .drag-save-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #4ade80;color:#4ade80;font-size:.75rem;padding:6px 18px;border-radius:99px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
 .drag-save-toast.show{opacity:1}
 
-/* API 비용 */
-.cost-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;padding:0 28px 32px}
-.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:16px;transition:border-color .15s}
-.cost-card:hover{border-color:#4ade80}
+/* 오너뷰 토글 버튼 */
 .cost-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cost-name{font-size:.85rem;font-weight:700;color:#f1f5f9}
 .cost-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
@@ -97,8 +105,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 .cost-link:hover{color:#60a5fa}
 .cost-manual-btn{font-size:.65rem;color:#f59e0b;background:none;border:1px solid #78350f;border-radius:4px;padding:2px 8px;cursor:pointer}
 .cost-total-summary{background:#0f172a;border:1px solid #22c55e;border-radius:12px;padding:16px 20px;margin:0 28px 16px}
-.cts-title{font-size:.72rem;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
-.cts-rows{display:flex;gap:32px;flex-wrap:wrap;margin-bottom:10px}
+.cts-title{font-size:.7rem;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.cts-rows{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:10px}
+@media(min-width:640px){.cts-rows{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
 .cts-item{display:flex;flex-direction:column;gap:2px}
 .cts-label{font-size:.68rem;color:#64748b}
 .cts-val{font-size:1.1rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
@@ -142,8 +151,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
   <div style="padding:40px;color:#475569;text-align:center">로딩 중…</div>
 </div>
 
-<!-- AI 비용 섹션 — 오너만 보임 -->
-<div id="cost-section" style="display:none">
+<!-- LLM 사용량 그래프 -->
+<div class="section" style="margin-top:20px">
+  <div class="section-label">📊 LLM 사용량 — 모델별·시계열</div>
+</div>
+<div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px">
+  <canvas id="usageChart" style="max-height:280px"></canvas>
+  <div id="usage-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid#334155"></div>
+</div>
+
+<!-- AI 비용 섹션 — 항상 표시 (로그인 시 API 실시간 조회) -->
+<div id="cost-section">
   <div class="section">
     <div class="section-label">💳 이달 AI 비용 — 구독 + API</div>
   </div>
@@ -155,7 +173,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
       <div class="cts-item"><div class="cts-label">인프라·서버</div><div class="cts-val" id="sum-infra">—</div></div>
     </div>
     <div class="cts-grand" id="sum-grand">—</div>
-    <div class="cts-note" id="sum-note">오너 로그인 후 API 자동 조회 (DeepSeek 잔액 · OpenAI 사용량)</div>
+    <div class="cts-note" id="sum-note">로그인 시 API 실시간 조회 (DeepSeek 잔액 · OpenAI 사용량 · OpenRouter)</div>
   </div>
   <div class="cost-grid" id="cost-grid">
     <div style="color:#475569;font-size:.8rem;padding:20px">비용 데이터 로딩 중…</div>
@@ -165,6 +183,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 <div class="footer">BTR 수성 내부 전용 · 무단 공유 금지</div>
 
 <div class="drag-save-toast" id="drag-toast">✓ 순서 저장됨</div>
+
+<!-- 비용 상세 모달 -->
+<div class="cost-detail-modal" id="cost-detail-modal">
+  <div class="cost-detail-content">
+    <div class="cost-detail-header">
+      <div class="cost-detail-title" id="cost-detail-title"></div>
+      <button class="cost-detail-close" onclick="closeCostDetail()">×</button>
+    </div>
+    <div id="cost-detail-body"></div>
+  </div>
+</div>
 
 <!-- 로그인 모달 -->
 <div class="modal-bg" id="modal-bg">
@@ -241,17 +270,19 @@ function applyOwnerView() {
 
 // ── AI 비용 로드 ──────────────────────────────────────────
 const COST_CONFIG = [
-  { key:'hermes',    label:'Hermes / Claude',    emoji:'🤖', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage',             note:'Hermes state.db 자동조회' },
-  { key:'openrouter',label:'OpenRouter (Pareto)', emoji:'🦾', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://openrouter.ai/settings/credits',                    note:'자동 라우팅 — 복잡도별 모델 선택' },
-  { key:'anthropic', label:'Anthropic (Claude)', emoji:'🤖', sub:20,  subName:'Claude Pro',        apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage' },
-  { key:'openai',    label:'OpenAI (GPT)',       emoji:'🤖', sub:20,  subName:'ChatGPT Plus',      apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음 — 수동입력' },
-  { key:'gemini',    label:'Google Gemini',      emoji:'🔵', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing' },
-  { key:'manus',     label:'Manus Pro',          emoji:'🦾', sub:0,   subName:'Manus Pro',         apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249 },
-  { key:'deepseek',  label:'DeepSeek',           emoji:'🐋', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage' },
-  { key:'elevenlabs',label:'ElevenLabs',          emoji:'🎙️', sub:2,   subName:'Starter',           apiAuto:false, dashboard:'https://elevenlabs.io/app/subscription',                 note:'TTS — $2/월 고정' },
-  { key:'perplexity',label:'Perplexity Pro',     emoji:'🔍', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api' },
-  { key:'railway',   label:'Railway',            emoji:'🚂', sub:0,   subName:'서버 호스팅 (무료)', isInfra:true,  dashboard:'https://railway.app/dashboard',                             note:'Trial 무료' },
-  { key:'cloudflare',label:'Cloudflare',         emoji:'☁️', sub:0,   subName:null,                apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier' },
+  { key:'anthropic_api',label:'Anthropic Claude API', logo:'/anthropic.svg', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage',             note:'Hermes 통해 사용 — 자동조회', cycle:'매월 1일' },
+  { key:'openrouter',label:'OpenRouter (Pareto)', logo:'/openrouter.png', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://openrouter.ai/settings/credits',                    note:'자동 라우팅 — 모델별 분석▼', cycle:'실시간 (크레딧)' },
+  { key:'anthropic', label:'Anthropic Claude Pro', logo:'/anthropic.svg', sub:20,  subName:'Claude Pro 월구독',  apiAuto:false, dashboard:'https://console.anthropic.com/settings/usage',             note:'월 구독 — API비 별도', cycle:'매월 28일' },
+  { key:'openai',    label:'OpenAI ChatGPT Pro',  logo:'/openai.png', sub:200, subName:'ChatGPT Pro',       apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음', cycle:'매월 17일' },
+  { key:'gemini',    label:'Google Gemini Advanced', logo:'/gemini.png', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing',                 note:'API 사용량 별도 청구', cycle:'매월 1일' },
+  { key:'deepseek',  label:'DeepSeek',            logo:'/deepseek.png', emoji:'🤖', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage',                       note:'잔액 기준', cycle:'충전식' },
+  { key:'elevenlabs',label:'ElevenLabs Creator',   logo:'/elevenlabs.ico', sub:22,  subName:'Creator',           apiAuto:false, dashboard:'https://elevenlabs.io/app/subscription',                 note:'TTS — $22/월 고정', cycle:'매월 10일' },
+  { key:'perplexity',label:'Perplexity Pro',      logo:'/perplexity.png', emoji:'🔍', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api',                   note:'연간 $200 결제', cycle:'연간 (12월)' },
+  { key:'manus',     label:'Manus Pro',           logo:'/manus.png', sub:0,   subName:'Manus Pro',         apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249, cycle:'크레딧 소진시' },
+  { key:'cloudflare',label:'Cloudflare',          logo:'/cloudflare.png', sub:0,   subName:null,                apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier', cycle:'무료', isActive:true },
+  { key:'railway',   label:'Railway',             logo:'/railway.png', sub:0,   subName:'서버 호스팅',        isInfra:true,  dashboard:'https://railway.app/dashboard',                             note:'Trial 크레딧 잔액', cycle:'무료', isActive:false },
+  { key:'vercel',    label:'Vercel',              logo:'/vercel.png', sub:0,   subName:null,                apiAuto:false, dashboard:'https://vercel.com/dashboard',                              isInfra:true, note:'Hobby 무료', cycle:'무료', isActive:true },
+  { key:'higgsfield',label:'Higgsfield',          logo:'/higgsfield.png', sub:0,   subName:null,                apiAuto:false, dashboard:'https://higgsfield.ai',                                     note:'영상생성 — 수동입력', cycle:'크레딧' },
 ];
 
 // 수동 입력 저장소 (sessionStorage)
@@ -287,7 +318,7 @@ async function loadAiCosts() {
 
     // API 금액 결정
     let apiUsd = null, apiLabel = '—', apiClass = 'loading', apiNote = '';
-    if (cfg.key === 'hermes' && wd && wd.api) {
+    if (cfg.key === 'anthropic_api' && wd && wd.api) {
       if (wd.api.total_usd !== undefined && wd.api.total_usd !== null) {
         apiUsd = wd.api.total_usd;
         apiLabel = `$${Number(apiUsd).toFixed(2)}`;
@@ -396,10 +427,15 @@ async function loadAiCosts() {
 
     const noteText = cfg.note ? `<div style="font-size:.65rem;color:#334155;margin-top:4px">${cfg.note}</div>` : '';
 
-    return `<div class="cost-card">
-      <div class="cost-header"><span class="cost-name">${cfg.emoji} ${cfg.label}</span></div>
+    const logoHtml = cfg.logo ? `<img src="${cfg.logo}" style="width:20px;height:20px;border-radius:4px;margin-right:6px;vertical-align:middle" onerror="this.style.display='none'">` : (cfg.emoji || '');
+    const statusBadge = cfg.isActive === false ? `<span style="font-size:.6rem;padding:2px 8px;border-radius:12px;background:#374151;color:#9ca3af;margin-left:6px">사용 안함</span>` : '';
+    const cycleHtml = cfg.cycle ? `<div style="font-size:.55rem;color:#475569;margin-top:2px">📅 ${cfg.cycle}</div>` : '';
+    const cardOpacity = cfg.isActive === false ? 'opacity:0.6;' : '';
+    return `<div class="cost-card" style="${cardOpacity}cursor:pointer" onclick="showCostDetail('${cfg.key}')">
+      <div class="cost-header"><span class="cost-name">${logoHtml}${cfg.label}${statusBadge}</span></div>
       <div class="cost-rows">${subRow}${apiRow}${infraRow}${creditRow}</div>
       ${totalRow}
+      ${cycleHtml}
       ${manualBtn}
       ${noteText}
       <a class="cost-link" href="${cfg.dashboard}" target="_blank">↗ 대시보드</a>
@@ -445,6 +481,7 @@ async function load() {
   document.getElementById('last-updated').textContent = '마지막 열람: ' + new Date().toLocaleString('ko-KR');
 
   renderGrid(services, IS_OWNER, stats);
+  loadAiCosts();
   if (IS_OWNER) applyOwnerView();
 }
 
@@ -652,5 +689,97 @@ async function trackClick(id, url) {
 
 load();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// LLM 사용량 그래프
+let usageChart;
+const visibleDatasets = new Set();
+
+async function loadUsageChart() {
+  try {
+    const r = await fetch('/api/usage-chart');
+    const data = await r.json();
+    
+    // 범례 생성
+    const legendHtml = data.datasets.map((ds, idx) => {
+      visibleDatasets.add(idx);
+      return `<div onclick="toggleDataset(${idx})" style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:#0f172a;border-radius:20px;cursor:pointer;border:2px solid transparent;transition:.15s" data-idx="${idx}" class="legend-item active" id="legend-${idx}">
+        <div style="width:10px;height:10px;border-radius:50%;background:${ds.backgroundColor}"></div>
+        <span style="font-size:.72rem;color:#e2e8f0">${ds.label}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('usage-legend').innerHTML = legendHtml;
+    
+    // Chart.js
+    const ctx = document.getElementById('usageChart').getContext('2d');
+    usageChart = new Chart(ctx, {
+      type: 'line',
+      data: data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            borderColor: '#4ade80',
+            borderWidth: 1,
+            titleColor: '#e2e8f0',
+            bodyColor: '#94a3b8',
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: ${(ctx.parsed.y / 1000).toFixed(1)}K tokens`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(148,163,184,0.1)' },
+            ticks: { color: '#94a3b8', font: { size: 10 } }
+          },
+          y: {
+            stacked: true,
+            grid: { color: 'rgba(148,163,184,0.1)' },
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 10 },
+              callback: v => `${(v / 1000).toFixed(0)}K`
+            }
+          }
+        },
+        elements: {
+          line: { tension: 0.4 },
+          point: { radius: 2 }
+        }
+      }
+    });
+  } catch (e) {
+    console.error('사용량 그래프 로드 실패:', e);
+  }
+}
+
+function toggleDataset(idx) {
+  const el = document.getElementById(`legend-${idx}`);
+  if (visibleDatasets.has(idx)) {
+    visibleDatasets.delete(idx);
+    el.classList.remove('active');
+    el.style.opacity = '0.4';
+    el.style.borderColor = 'transparent';
+    usageChart.setDatasetVisibility(idx, false);
+  } else {
+    visibleDatasets.add(idx);
+    el.classList.add('active');
+    el.style.opacity = '1';
+    el.style.borderColor = usageChart.data.datasets[idx].borderColor;
+    usageChart.setDatasetVisibility(idx, true);
+  }
+  usageChart.update();
+}
+
+// 초기 로드
+loadUsageChart();
+</script>
+<script src="/cost-modal.js"></script>
+
 </body>
 </html>

@@ -20,7 +20,7 @@ export default {
     if (url.pathname === '/api/admin-login' && request.method === 'POST') {
       const { password } = await request.json();
       if (password === env.ADMIN_PASSWORD) {
-        const encoded = btoa(env.ADMIN_PASSWORD + ':' + env.ADMIN_SECRET);
+        const encoded = btoa((env.ADMIN_PASSWORD || '') + ':' + (env.ADMIN_SECRET || ''));
         return new Response(JSON.stringify({ ok: true, token: encoded }), {
           headers: { ...cors, 'Content-Type': 'application/json' }
         });
@@ -74,6 +74,11 @@ export default {
         manus:        { name: 'Manus Pro', usd: 0, currency: 'USD', note: '크레딧제' },
         railway:      { name: 'Railway', usd: 0, currency: 'USD', note: 'Trial' },
         cloudflare:   { name: 'Cloudflare', usd: 0, currency: 'USD', note: 'Free' },
+        anthropic:    { name: 'Claude Pro', usd: 20, currency: 'USD' },
+        anthropic_api:{ name: null, usd: 0, currency: 'USD' },
+        openrouter:   { name: null, usd: 0, currency: 'USD' },
+        openai:       { name: 'ChatGPT Pro', usd: 200, currency: 'USD' },
+        deepseek:     { name: null, usd: 0, currency: 'USD' },
       };
 
       // API 사용량 조회
@@ -170,7 +175,7 @@ export default {
         _ts: Date.now(),
         _month: new Date(Date.now() + 9*60*60*1000).toISOString().slice(0,7),
         services: {
-          hermes:    { label: 'Hermes / Claude API',  sub: { name: null, usd: 0 },              api: apiCosts.hermes,    dashboard: 'https://console.anthropic.com/settings/usage' },
+          anthropic_api:{ label:'Anthropic / Claude API', sub: SUBSCRIPTIONS.anthropic_api, api: apiCosts.hermes, dashboard:'https://console.anthropic.com/settings/usage' },
           openrouter:{ label: 'OpenRouter (Pareto)', sub: { name: null, usd: 0 },              api: apiCosts.openrouter, dashboard: 'https://openrouter.ai/settings/credits' },
           anthropic: { label: 'Anthropic (Claude)',   sub: SUBSCRIPTIONS.anthropic, api: apiCosts.anthropic, dashboard: 'https://console.anthropic.com/settings/usage' },
           openai:    { label: 'OpenAI (GPT)',         sub: SUBSCRIPTIONS.openai,    api: apiCosts.openai,    dashboard: 'https://platform.openai.com/settings/organization/billing' },

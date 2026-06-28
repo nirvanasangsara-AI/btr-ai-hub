@@ -4,7 +4,8 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>BTR AI — 에이전트 네트워크</title>
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/three@0.152.0/build/three.min.js"></script>
+<script src="https://unpkg.com/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#020617;color:#e2e8f0;overflow:hidden;font-family:'SF Mono','JetBrains Mono','Noto Sans KR',monospace}
@@ -12,266 +13,252 @@ body{background:#020617;color:#e2e8f0;overflow:hidden;font-family:'SF Mono','Jet
 .header{position:fixed;top:0;left:0;right:0;z-index:10;padding:8px 16px;background:rgba(2,6,23,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between}
 .logo{font-size:.85rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(139,92,246,0.8)}
 .logo em{font-style:normal;color:#c4b5fd}
-.logo a{color:rgba(148,163,184,0.4);text-decoration:none;font-size:.6rem;margin-left:10px}
+.logo a{color:rgba(148,163,184,0.3);text-decoration:none;font-size:.6rem;margin-left:10px}
 .status{display:flex;align-items:center;gap:10px;font-size:.6rem;color:rgba(148,163,184,0.5)}
 .dot{width:7px;height:7px;border-radius:50%}
 .dot.live{background:#4ade80;box-shadow:0 0 12px rgba(74,222,128,0.8)}
 .dot.dead{background:#ef4444}
 
-#svg-container{position:fixed;top:44px;left:0;right:0;bottom:0;z-index:1}
-#svg{width:100%;height:100%;display:block}
+#graph-container{position:fixed;top:44px;left:0;right:0;bottom:120px;z-index:1}
 
-.hud-bottom{position:fixed;bottom:12px;left:12px;right:12px;display:flex;gap:8px;z-index:5;pointer-events:none}
-.hud-metric{flex:1;background:rgba(2,6,23,0.9);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 12px;text-align:center}
-.hud-metric .val{font-size:1.4rem;font-weight:700}
-.hud-metric .lbl{font-size:.5rem;text-transform:uppercase;letter-spacing:1px;color:rgba(148,163,184,0.4)}
-.val.blue{color:#60a5fa;text-shadow:0 0 16px rgba(96,165,250,0.5)}
-.val.green{color:#4ade80;text-shadow:0 0 16px rgba(74,222,128,0.5)}
-.val.red{color:#f87171;text-shadow:0 0 16px rgba(248,113,113,0.5)}
-.val.amber{color:#fbbf24;text-shadow:0 0 16px rgba(251,191,36,0.5)}
-
-.tooltip{position:fixed;pointer-events:none;background:rgba(2,6,23,0.98);border:1px solid rgba(139,92,246,0.3);border-radius:6px;padding:8px 11px;font-size:.62rem;color:#e2e8f0;max-width:240px;line-height:1.5;box-shadow:0 4px 24px rgba(0,0,0,.8);opacity:0;transition:opacity .12s;z-index:100}
-.tooltip strong{display:block;color:#f1f5f9;margin-bottom:3px;font-size:.68rem}
-.tooltip .meta{color:rgba(148,163,184,0.5);font-size:.55rem}
+.hud-bottom{position:fixed;bottom:6px;left:12px;right:12px;z-index:5;pointer-events:none}
+.task-summary{background:rgba(2,6,23,0.92);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 16px}
+.task-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:.75rem}
+.task-row:last-child{margin-bottom:0}
+.task-badge{min-width:50px;text-align:center;padding:4px 8px;border-radius:4px;font-weight:700;font-size:.7rem}
+.task-badge.running{background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)}
+.task-badge.done{background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3)}
+.task-badge.blocked{background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
+.task-badge.todo{background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)}
+.task-desc{flex:1;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-total{text-align:right;color:#64748b;font-size:.65rem;margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04)}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="logo">BTR <em>AI</em> · NETWORK<a href="/">← Hub</a></div>
-  <div class="status">
+  <div class="status" id="live-status">
     <span id="live-dot" class="dot dead"></span>
     <span id="live-text">OFFLINE</span>
     <span id="clock">00:00:00</span>
+    <span id="session-info" style="margin-left:12px;font-size:.55rem;color:#64748b;border-left:1px solid #334155;padding-left:12px"></span>
   </div>
 </div>
 
-<div id="svg-container"><svg id="svg"></svg></div>
+<div id="graph-container"></div>
 
 <div class="hud-bottom">
-  <div class="hud-metric"><div class="val blue" id="cnt-running">0</div><div class="lbl">Running</div></div>
-  <div class="hud-metric"><div class="val green" id="cnt-done">0</div><div class="lbl">Done</div></div>
-  <div class="hud-metric"><div class="val red" id="cnt-blocked">0</div><div class="lbl">Blocked</div></div>
-  <div class="hud-metric"><div class="val amber" id="cnt-todo">0</div><div class="lbl">Todo</div></div>
-  <div class="hud-metric"><div class="val" style="color:rgba(200,210,240,0.8);text-shadow:0 0 12px rgba(200,210,240,0.3)" id="cnt-total">0</div><div class="lbl">Total</div></div>
+  <div class="task-summary" id="task-summary">
+    <div style="color:#94a3b8;font-size:.65rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">진행 중인 작업</div>
+    <div id="task-list"></div>
+    <div class="task-total" id="task-total">총 0개 작업</div>
+  </div>
 </div>
 
-<div class="tooltip" id="tooltip"></div>
-
 <script>
-setInterval(()=>{document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)},1000);
-
-const STATUS_COLOR={running:'#60a5fa',done:'#4ade80',blocked:'#f87171',todo:'#fbbf24',ready:'#fbbf24'};
+const STATUS_COLOR={running:'#3b82f6',done:'#22c55e',blocked:'#ef4444',todo:'#f59e0b',ready:'#f59e0b'};
+const COLOR_HEX={
+  agent:'#8b5cf6',
+  running:0x3b82f6,done:0x22c55e,blocked:0xef4444,todo:0xf59e0b
+};
 const AGENT_NAMES=['researcher','developer','data','reviewer','default'];
-let sim, svg, gLink, gNode, gParticle;
-const tooltipEl=document.getElementById('tooltip');
 
-function initSVG(){
-  const el=document.getElementById('svg-container');
-  const W=el.clientWidth, H=el.clientHeight;
-  svg=d3.select('#svg').attr('viewBox',`0 0 ${W} ${H}`).attr('preserveAspectRatio','xMidYMid meet');
-
-  const defs=svg.append('defs');
-
-  // Drop shadow
-  const sh=defs.append('filter').attr('id','sh').attr('x','-50%').attr('y','-50%').attr('width','200%').attr('height','200%');
-  sh.append('feDropShadow').attr('dx',0).attr('dy',4).attr('stdDeviation',8).attr('flood-color','#000').attr('flood-opacity',0.7);
-
-  // Glow filters
-  ['purple','blue','green','red','amber'].forEach((n,i)=>{
-    const c=['#8b5cf6','#3b82f6','#22c55e','#ef4444','#f59e0b'][i];
-    const f=defs.append('filter').attr('id','g-'+n).attr('x','-100%').attr('y','-100%').attr('width','300%').attr('height','300%');
-    f.append('feGaussianBlur').attr('stdDeviation','8').attr('result','b1');
-    f.append('feGaussianBlur').attr('stdDeviation','20').attr('result','b2');
-    const m=f.append('feMerge');
-    m.append('feMergeNode').attr('in','b2');
-    m.append('feMergeNode').attr('in','b1');
-    m.append('feMergeNode').attr('in','SourceGraphic');
-  });
-
-  // Radial gradients — strong 3D
-  const grads={agent:['#f5f3ff','#c4b5fd','#7c3aed','#4c1d95'],
-    running:['#eff6ff','#93c5fd','#3b82f6','#1e3a5f'],
-    done:['#f0fdf4','#86efac','#22c55e','#14532d'],
-    blocked:['#fef2f2','#fca5a5','#ef4444','#7f1d1d'],
-    todo:['#fffbeb','#fde68a','#f59e0b','#78350f']};
-  Object.entries(grads).forEach(([k,v])=>{
-    const g=defs.append('radialGradient').attr('id','grad-'+k).attr('cx','35%').attr('cy','30%').attr('r','65%');
-    g.append('stop').attr('offset','0%').attr('stop-color','rgba(255,255,255,0.95)');
-    g.append('stop').attr('offset','12%').attr('stop-color',v[0]);
-    g.append('stop').attr('offset','50%').attr('stop-color',v[2]);
-    g.append('stop').attr('offset','100%').attr('stop-color',v[3]);
-  });
-
-  gLink=svg.append('g');
-  gParticle=svg.append('g');
-  gNode=svg.append('g');
-
-  sim=d3.forceSimulation()
-    .force('link',d3.forceLink().id(d=>d.id).distance(d=>d.source.type==='agent'?200:130).strength(0.6))
-    .force('charge',d3.forceManyBody().strength(-400))
-    .force('center',d3.forceCenter(W/2,H/2).strength(0.8))
-    .force('collision',d3.forceCollide().radius(d=>d.type==='agent'?65:35));
+// --- Sprite label ---
+const labelCache=new Map();
+function makeLabel(text,color){
+  const k=text+'|'+color;
+  if(labelCache.has(k))return labelCache.get(k).clone();
+  const c=document.createElement('canvas');c.width=768;c.height=192;
+  const ctx=c.getContext('2d');
+  ctx.font='bold 84px "SF Mono","JetBrains Mono",monospace';
+  ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(text,384,96);
+  const tex=new THREE.CanvasTexture(c);tex.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
+  sp.scale.set(24,6,1);labelCache.set(k,sp);return sp.clone();
 }
 
+// --- Node 3D object ---
+function agentNode3D(label){
+  const g=new THREE.Group();
+  const r=5;
+  // Main sphere
+  const geo=new THREE.SphereGeometry(r,32,32);
+  const mat=new THREE.MeshPhongMaterial({color:0x8b5cf6,emissive:0x5b21b6,emissiveIntensity:0.6,shininess:40,specular:0xddd6fe});
+  g.add(new THREE.Mesh(geo,mat));
+  // Glow halo
+  const hGeo=new THREE.SphereGeometry(r*1.6,32,32);
+  const hMat=new THREE.MeshBasicMaterial({color:0x8b5cf6,transparent:true,opacity:0.08,depthWrite:false});
+  g.add(new THREE.Mesh(hGeo,hMat));
+  // Outer ring
+  const tGeo=new THREE.TorusGeometry(r*1.25,0.3,16,32);
+  const tMat=new THREE.MeshBasicMaterial({color:0xa78bfa,transparent:true,opacity:0.25,depthWrite:false});
+  g.add(new THREE.Mesh(tGeo,tMat));
+  // Label
+  const lbl=makeLabel(label.toUpperCase(),'#e2e8f0');
+  lbl.position.y=r+3;g.add(lbl);
+  return g;
+}
+
+function taskNode3D(status,label){
+  const g=new THREE.Group();
+  const r=3,hex=COLOR_HEX[status]||0xf59e0b;
+  const geo=new THREE.SphereGeometry(r,24,24);
+  const mat=new THREE.MeshPhongMaterial({color:hex,emissive:hex,emissiveIntensity:0.4,shininess:30});
+  g.add(new THREE.Mesh(geo,mat));
+  // Label
+  const lbl=makeLabel(label,'rgba(200,210,240,0.5)');
+  lbl.position.y=r+2;g.add(lbl);
+  return g;
+}
+
+// --- Graph init ---
+const el=document.getElementById('graph-container');
+const Graph=ForceGraph3D()(el)
+  .backgroundColor('#020617')
+  .showNavInfo(false)
+  .nodeThreeObject(d=>d.type==='agent'?agentNode3D(d.label):taskNode3D(d.status,d.label))
+  .nodeLabel('') // disable HTML labels, using sprites instead
+  .linkWidth(1)
+  .linkOpacity(0.15)
+  .linkColor(l=>l.type==='assign'?'#8b5cf6':'#334155')
+  .linkDirectionalParticles(l=>l.type==='assign'?3:0)
+  .linkDirectionalParticleSpeed(0.003)
+  .linkDirectionalParticleWidth(1.2)
+  .linkDirectionalParticleColor(()=>'#c4b5fd')
+  .linkDirectionalParticleResolution(32)
+  .enableNavigationControls(true)
+  .enableNodeDrag(true)
+  .nodeRelSize(1)
+  .cooldownTicks(40)
+  .warmupTicks(20)
+  .graphData({nodes:[],links:[]});
+
+// Lighting
+const scene=Graph.scene();
+scene.add(new THREE.AmbientLight(0x303050,1.2));
+const dl=new THREE.DirectionalLight(0xffffff,0.7);
+dl.position.set(1,1,1);scene.add(dl);
+const dl2=new THREE.DirectionalLight(0x8b5cf6,0.3);
+dl2.position.set(-1,-0.5,-0.5);scene.add(dl2);
+
+// Camera - 모든 노드가 화면에 보이도록 줌 아웃
+Graph.cameraPosition({x:0,y:0,z:350});
+
+// --- Clock ---
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)},1000);
+
+// --- Build graph ---
 function buildGraph(tasks){
   const agentSet=new Set(tasks.map(t=>t.assignee).filter(Boolean));
   AGENT_NAMES.forEach(a=>agentSet.add(a));
   const agents=[...agentSet].map(id=>({
     id:'agent:'+id,label:id,type:'agent',
-    taskCount:tasks.filter(t=>t.assignee===id).length,
-    runningCount:tasks.filter(t=>t.assignee===id&&t.status==='running').length
+    taskCount:tasks.filter(t=>t.assignee===id).length
   }));
   const am=Object.fromEntries(agents.map(n=>[n.label,n]));
 
   const taskNodes=tasks.map(t=>({
-    id:t.id,label:t.title?t.title.slice(0,14)+(t.title.length>14?'…':''):t.id.slice(0,6),
-    type:'task',status:t.status||'todo',assignee:t.assignee,
-    summary:t.summary||'',raw:t,
+    id:t.id,label:t.title?t.title.slice(0,12)+(t.title.length>12?'…':''):t.id.slice(0,6),
+    type:'task',status:t.status||'todo',assignee:t.assignee
   }));
 
   const links=[],tids=new Set(tasks.map(t=>t.id));
   for(const t of taskNodes){if(t.assignee&&am[t.assignee])links.push({source:'agent:'+t.assignee,target:t.id,type:'assign'});}
   for(const t of tasks){if(t.parents)for(const p of t.parents)if(tids.has(p))links.push({source:p,target:t.id,type:'dep'});}
-  return {nodes:[...agents,...taskNodes],links,agents};
+  return {nodes:[...agents,...taskNodes],links};
 }
 
-function render(data){
-  const tasks=data.tasks||[];
-  const {nodes,links,agents}=buildGraph(tasks);
-
-  // HUD
-  const cnt={running:0,done:0,blocked:0,todo:0};
-  for(const t of tasks){const s=t.status||'todo';cnt[s]=(cnt[s]||0)+1;}
-  ['running','done','blocked','todo'].forEach(s=>document.getElementById('cnt-'+s).textContent=cnt[s]);
-  document.getElementById('cnt-total').textContent=tasks.length;
-
-  // Preserve previous positions, init new nodes at center
-  const el=document.getElementById('svg-container');
-  const CX=el.clientWidth/2, CY=el.clientHeight/2;
-  const old=(sim.nodes&&sim.nodes())||[];
-  const pm=Object.fromEntries(old.map(n=>[n.id,{x:n.x,y:n.y,vx:n.vx,vy:n.vy}]));
-  for(const n of nodes){
-    if(pm[n.id]) Object.assign(n,pm[n.id]);
-    else { n.x=CX+(Math.random()-0.5)*300; n.y=CY+(Math.random()-0.5)*300; }
-  }
-
-  sim.nodes(nodes);
-  sim.force('link').links(links);
-  sim.force('center',d3.forceCenter(CX,CY).strength(0.5));
-  sim.alpha(0.6).restart();
-
-  // Links
-  const ls=gLink.selectAll('line').data(links,d=>d.source.id+'-'+d.target.id);
-  ls.exit().remove();
-  ls.enter().append('line')
-    .attr('stroke',d=>d.type==='assign'?'rgba(139,92,246,0.3)':'rgba(51,65,85,0.15)')
-    .attr('stroke-width',d=>d.type==='assign'?2:1)
-    .attr('stroke-dasharray',d=>d.type==='assign'?'10 8':'4 10')
-    .merge(ls);
-
-  // Nodes
-  const ns=gNode.selectAll('g.n').data(nodes,d=>d.id);
-  ns.exit().remove();
-  const ne=ns.enter().append('g').attr('class','n')
-    .call(d3.drag()
-      .on('start',(e,d)=>{if(!e.active)sim.alphaTarget(0.2).restart();d.fx=d.x;d.fy=d.y;})
-      .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y;})
-      .on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null;}))
-    .on('mouseover',showTooltip).on('mousemove',moveTooltip).on('mouseout',hideTooltip);
-
-  // Agent: glow ring + 3D sphere + label
-  const ae=ne.filter(d=>d.type==='agent');
-  ae.append('circle').attr('class','glow');
-  ae.append('circle').attr('class','sphere');
-  ae.append('text').attr('class','lbl').attr('dy','.35em');
-
-  // Task: glow + sphere + label
-  const te=ne.filter(d=>d.type==='task');
-  te.append('circle').attr('class','glow');
-  te.append('circle').attr('class','sphere');
-  te.append('text').attr('class','lbl').attr('dy','.35em');
-
-  const nm=ne.merge(ns);
-
-  // Agent glow
-  nm.filter(d=>d.type==='agent').select('circle.glow')
-    .attr('r',30).attr('fill','none').attr('stroke','#8b5cf6').attr('stroke-width',6).attr('opacity',0.3)
-    .attr('filter','url(#g-purple)');
-  // Agent sphere
-  nm.filter(d=>d.type==='agent').select('circle.sphere')
-    .attr('r',20).attr('fill','url(#grad-agent)').attr('filter','url(#sh)').attr('stroke','#c4b5fd').attr('stroke-width',1.5);
-  // Agent label
-  nm.filter(d=>d.type==='agent').select('text.lbl')
-    .text(d=>d.label.toUpperCase()).attr('text-anchor','middle')
-    .attr('fill','#e2e8f0').attr('font-size','.5rem').attr('font-weight','700');
-
-  // Task glow
-  nm.filter(d=>d.type==='task').select('circle.glow')
-    .attr('r',14).attr('fill','none')
-    .attr('stroke',d=>STATUS_COLOR[d.status]||'#f59e0b').attr('stroke-width',4).attr('opacity',0.35)
-    .attr('filter',d=>d.status==='running'?'url(#g-blue)':(d.status==='done'?'url(#g-green)':(d.status==='blocked'?'url(#g-red)':null)));
-  // Task sphere
-  const gm={running:'grad-running',done:'grad-done',blocked:'grad-blocked',todo:'grad-todo',ready:'grad-todo'};
-  nm.filter(d=>d.type==='task').select('circle.sphere')
-    .attr('r',10).attr('fill',d=>`url(#${gm[d.status]||'grad-todo'})`).attr('filter','url(#sh)')
-    .attr('opacity',d=>d.status==='done'?0.5:1);
-  // Task label
-  nm.filter(d=>d.type==='task').select('text.lbl')
-    .text(d=>d.label).attr('text-anchor','middle')
-    .attr('fill','rgba(200,210,240,0.5)').attr('font-size','.4rem').attr('dy','1.8em');
-
-  // Edge particles
-  const al=links.filter(l=>l.type==='assign');
-  gParticle.selectAll('circle').remove();
-  gParticle.selectAll('circle').data(al).enter().append('circle')
-    .attr('r',3).attr('fill','#c4b5fd').attr('opacity',0.8);
-
-  sim.on('tick',()=>{
-    // Clamp all nodes to viewport bounds
-    const el=document.getElementById('svg-container');
-    const pad=60, VW=el.clientWidth, VH=el.clientHeight;
-    sim.nodes().forEach(n=>{
-      n.x=Math.max(pad,Math.min(VW-pad,n.x));
-      n.y=Math.max(pad,Math.min(VH-pad,n.y));
-    });
-    gLink.selectAll('line').attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
-    const t=(Date.now()/2000)%1;
-    gParticle.selectAll('circle')
-      .attr('cx',d=>d.source.x+(d.target.x-d.source.x)*t)
-      .attr('cy',d=>d.source.y+(d.target.y-d.source.y)*t);
-    gNode.selectAll('g.n').attr('transform',d=>`translate(${d.x},${d.y})`);
-  });
-}
-
-function showTooltip(evt,d){
-  if(d.type==='agent')tooltipEl.innerHTML=`<strong>◈ ${d.label.toUpperCase()}</strong><span class="meta">에이전트 · 태스크 ${d.taskCount}개</span>`;
-  else{const s=d.status||'todo',sl={running:'● 진행',done:'○ 완료',blocked:'◆ 차단',todo:'◇ 대기'}[s]||s;
-    tooltipEl.innerHTML=`<strong>${d.label}</strong><span class="meta">${sl} · ${d.assignee||'-'}</span>${d.summary?`<div style="font-size:.55rem;color:rgba(148,163,184,0.4);margin-top:4px">${d.summary.slice(0,100)}</div>`:''}`;}
-  tooltipEl.style.opacity='1';moveTooltip(evt);
-}
-function moveTooltip(evt){let x=evt.clientX+12,y=evt.clientY-10;if(x+240>innerWidth)x=evt.clientX-240;tooltipEl.style.left=x+'px';tooltipEl.style.top=y+'px';}
-function hideTooltip(){tooltipEl.style.opacity='0';}
-
+// --- Fetch & render ---
+let lastIds='';
 async function fetchState(){
   try{
     const r=await fetch('/api/kanban-state',{cache:'no-store'});
     if(!r.ok)throw new Error(r.status);
     const data=await r.json();
+    const tasks=data.tasks||[];
+
+    // 하단 작업 상세 정보 업데이트
+    const STATUS_LABELS={running:'실행 중',done:'완료',blocked:'대기',todo:'예정'};
+    const taskList=document.getElementById('task-list');
+    const byStatus={running:[],done:[],blocked:[],todo:[]};
+    for(const t of tasks){
+      const s=t.status||'todo';
+      if(!byStatus[s])byStatus[s]=[];
+      byStatus[s].push(t);
+    }
+    
+    let html='';
+    for(const status of ['running','blocked','todo','done']){
+      const list=byStatus[status]||[];
+      if(list.length===0)continue;
+      for(const t of list.slice(0,3)){  // 각 상태별 최대 3개
+        const title=t.title||t.id.slice(0,8);
+        const assignee=t.assignee?`[${t.assignee}]`:'';
+        html+=`<div class="task-row"><div class="task-badge ${status}">${STATUS_LABELS[status]}</div><div class="task-desc">${assignee} ${title}</div></div>`;
+      }
+    }
+    taskList.innerHTML=html||'<div style="color:#64748b;font-size:.7rem">진행 중인 작업 없음</div>';
+    document.getElementById('task-total').textContent=`총 ${tasks.length}개 작업`;
+
+    // Only re-graph if structure changed
+    const ids=JSON.stringify(tasks.map(t=>t.id).sort());
+    if(ids!==lastIds){
+      const gd=buildGraph(tasks);
+      // Distance based on node type
+      Graph.dagMode(null);
+      Graph.d3Force('link').distance(l=>l.source.type==='agent'?80:50);
+      Graph.d3Force('charge').strength(-200);
+      Graph.graphData(gd);
+      lastIds=ids;
+    }
+
     document.getElementById('live-dot').className='dot live';
     document.getElementById('live-text').textContent='LIVE';
-    render(data);
+    
+    // 현재 세션 정보 표시
+    if(data.current_session){
+      const s=data.current_session;
+      document.getElementById('session-info').innerHTML=`🔵 ${s.model||'unknown'} · ${s.turn||0}턴 · ${s.platform||'?'}`;
+    }
   }catch(e){
+    console.error('fetchState error:',e.message);
     document.getElementById('live-dot').className='dot dead';
     document.getElementById('live-text').textContent='OFFLINE';
-    console.error(e.message);
   }
 }
 
-initSVG();
-fetchState();
+setTimeout(fetchState,200);
 setInterval(fetchState,3000);
-window.addEventListener('resize',()=>{initSVG();fetchState();});
+
+// Resize
+window.addEventListener('resize',()=>{Graph.width(el.clientWidth).height(el.clientHeight);});
 </script>
 </body>
 </html>
+<script>
+// 건강도 표시 (우상단)
+async function loadHealth() {
+  try {
+    const r = await fetch('/api/agent-health');
+    const d = await r.json();
+    const curr = d.current;
+    if (!curr) return;
+    
+    const score = curr.health_score || 0;
+    const color = score > 80 ? '#10b981' : score > 50 ? '#f59e0b' : '#ef4444';
+    const arrow = d.history.length > 1 ? (curr.health_score > d.history[1].health_score ? '↗' : '↘') : '';
+    
+    document.getElementById('live-status').insertAdjacentHTML('afterend', `
+      <div style="position:absolute;top:16px;right:16px;background:#0f172a;border:1px solid #334155;padding:8px 12px;border-radius:6px;font-size:.75rem">
+        <div style="color:#94a3b8">⚡ Health</div>
+        <div style="color:${color};font-size:1.5rem;font-weight:bold">${score.toFixed(0)} ${arrow}</div>
+        <div style="color:#64748b;font-size:.65rem">${curr.avg_turn_sec}s/turn</div>
+      </div>
+    `);
+  } catch (e) { console.warn('Health load failed', e); }
+}
+
+setTimeout(loadHealth, 1000);
+</script>

@@ -2,7 +2,7 @@
 // 인증: X-Admin-Token: btoa(ADMIN_PASSWORD + ':' + ADMIN_SECRET)
 export async function onRequestPost({ request, env }) {
   const adminToken = request.headers.get('X-Admin-Token');
-  const expected = btoa(env.ADMIN_PASSWORD + ':' + env.ADMIN_SECRET);
+  const expected = btoa((env.ADMIN_PASSWORD || '') + ':' + (env.ADMIN_SECRET || ''));
   if (adminToken !== expected) {
     return new Response('Unauthorized', { status: 401 });
   }
