@@ -4,8 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>BTR AI Hub</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/x-icon" href="/favicon.svg">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="stylesheet" href="/cost-modal.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -272,18 +271,18 @@ function applyOwnerView() {
 // ── AI 비용 로드 ──────────────────────────────────────────
 const COST_CONFIG = [
   { key:'anthropic_api',label:'Anthropic Claude API', logo:'/anthropic.svg', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://console.anthropic.com/settings/usage',             note:'Hermes 통해 사용 — 자동조회', cycle:'매월 1일' },
-  { key:'openrouter',label:'OpenRouter (Pareto)', logo:'/openrouter.svg', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://openrouter.ai/settings/credits',                    note:'자동 라우팅 — 모델별 분석▼', cycle:'실시간 (크레딧)' },
+  { key:'openrouter',label:'OpenRouter (Pareto)', logo:'/openrouter.png', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://openrouter.ai/settings/credits',                    note:'자동 라우팅 — 모델별 분석▼', cycle:'실시간 (크레딧)' },
   { key:'anthropic', label:'Anthropic Claude Pro', logo:'/anthropic.svg', sub:20,  subName:'Claude Pro 월구독',  apiAuto:false, dashboard:'https://console.anthropic.com/settings/usage',             note:'월 구독 — API비 별도', cycle:'매월 28일' },
-  { key:'openai',    label:'OpenAI ChatGPT Pro',  logo:'/openai.svg', sub:200, subName:'ChatGPT Pro',       apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음', cycle:'매월 17일' },
-  { key:'gemini',    label:'Google Gemini Advanced', logo:'/gemini.svg', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing',                 note:'API 사용량 별도 청구', cycle:'매월 1일' },
-  { key:'deepseek',  label:'DeepSeek',            logo:'/deepseek.svg', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage',                       note:'잔액 기준', cycle:'충전식' },
-  { key:'elevenlabs',label:'ElevenLabs Creator',   logo:'/elevenlabs.svg', sub:22,  subName:'Creator',           apiAuto:false, dashboard:'https://elevenlabs.io/app/subscription',                 note:'TTS — $22/월 고정', cycle:'매월 10일' },
-  { key:'perplexity',label:'Perplexity Pro',      logo:'/perplexity.svg', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api',                   note:'연간 $200 결제', cycle:'연간 (12월)' },
-  { key:'manus',     label:'Manus Pro',           logo:'/manus.svg', sub:0,   subName:'Manus Pro',         apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249, cycle:'크레딧 소진시' },
-  { key:'cloudflare',label:'Cloudflare',          logo:'/cloudflare.svg', sub:0,   subName:null,                apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier', cycle:'무료', isActive:true },
-  { key:'railway',   label:'Railway',             logo:'/railway.svg', sub:0,   subName:'서버 호스팅',        isInfra:true,  dashboard:'https://railway.app/dashboard',                             note:'Trial 크레딧 잔액', cycle:'무료', isActive:false },
-  { key:'vercel',    label:'Vercel',              logo:'/vercel.svg', sub:0,   subName:null,                apiAuto:false, dashboard:'https://vercel.com/dashboard',                              isInfra:true, note:'Hobby 무료', cycle:'무료', isActive:true },
-  { key:'higgsfield',label:'Higgsfield',          logo:'/higgsfield.svg', sub:0,   subName:null,                apiAuto:false, dashboard:'https://higgsfield.ai',                                     note:'영상생성 — 수동입력', cycle:'크레딧' },
+  { key:'openai',    label:'OpenAI ChatGPT Pro',  logo:'/openai.png', sub:200, subName:'ChatGPT Pro',       apiAuto:false, dashboard:'https://platform.openai.com/settings/organization/billing', note:'org-level 권한 없음', cycle:'매월 17일' },
+  { key:'gemini',    label:'Google Gemini Advanced', logo:'/gemini.png', sub:20,  subName:'Gemini Advanced',   apiAuto:false, dashboard:'https://console.cloud.google.com/billing',                 note:'API 사용량 별도 청구', cycle:'매월 1일' },
+  { key:'deepseek',  label:'DeepSeek',            logo:'/deepseek.png', emoji:'🤖', sub:0,   subName:null,                apiAuto:true,  dashboard:'https://platform.deepseek.com/usage',                       note:'잔액 기준', cycle:'충전식' },
+  { key:'elevenlabs',label:'ElevenLabs Creator',   logo:'/elevenlabs.ico', sub:22,  subName:'Creator',           apiAuto:false, dashboard:'https://elevenlabs.io/app/subscription',                 note:'TTS — $22/월 고정', cycle:'매월 10일' },
+  { key:'perplexity',label:'Perplexity Pro',      logo:'/perplexity.png', emoji:'🔍', sub:20,  subName:'Perplexity Pro',    apiAuto:false, dashboard:'https://www.perplexity.ai/settings/api',                   note:'연간 $200 결제', cycle:'연간 (12월)' },
+  { key:'manus',     label:'Manus Pro',           logo:'/manus.png', sub:0,   subName:'Manus Pro',         apiAuto:false, dashboard:'https://manus.im/app#settings/usage', note:'크레딧제 — 수동입력', creditTotal:85000, creditUsed:8249, cycle:'크레딧 소진시' },
+  { key:'cloudflare',label:'Cloudflare',          logo:'/cloudflare.png', sub:0,   subName:null,                apiAuto:false, dashboard:'https://dash.cloudflare.com',                               isInfra:true, note:'Free Tier', cycle:'무료', isActive:true },
+  { key:'railway',   label:'Railway',             logo:'/railway.png', sub:0,   subName:'서버 호스팅',        isInfra:true,  dashboard:'https://railway.app/dashboard',                             note:'Trial 크레딧 잔액', cycle:'무료', isActive:false },
+  { key:'vercel',    label:'Vercel',              logo:'/vercel.png', sub:0,   subName:null,                apiAuto:false, dashboard:'https://vercel.com/dashboard',                              isInfra:true, note:'Hobby 무료', cycle:'무료', isActive:true },
+  { key:'higgsfield',label:'Higgsfield',          logo:'/higgsfield.png', sub:0,   subName:null,                apiAuto:false, dashboard:'https://higgsfield.ai',                                     note:'영상생성 — 수동입력', cycle:'크레딧' },
 ];
 
 // 수동 입력 저장소 (sessionStorage)

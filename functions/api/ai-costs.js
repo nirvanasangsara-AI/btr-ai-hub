@@ -137,17 +137,17 @@ export async function onRequestGet({ request, env }) {
     services.deepseek = { balance_usd: 9, balance_cny: null, source: 'fixed', note: `오류 fallback` };
   }
 
-  // ── 4. 11Labs — 고정 $2/월 ────────────────────────────
+  // ── 4. 11Labs — 고정 $22/월 ────────────────────────────
   services.elevenlabs = {
-    subscription_usd: 2,
-    plan: 'Starter',
+    subscription_usd: 22,
+    plan: 'Creator',
     source: 'fixed',
-    note: '$2/월 고정',
+    note: '$22/월 고정',
   };
 
   // ── 5. Hermes KV 저장 비용 읽기 ──────────────────────
   const hermesRaw = await env.HUB_CONFIG.get('hermes_cost');
-  services.hermes = hermesRaw
+  services.anthropic_api = hermesRaw
     ? JSON.parse(hermesRaw)
     : { manual: false, note: '크론 미실행 또는 데이터 없음' };
 
