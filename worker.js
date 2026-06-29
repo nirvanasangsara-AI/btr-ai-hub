@@ -71,6 +71,7 @@ export default {
         gemini:       { name: 'Gemini Advanced', usd: 20, currency: 'USD' },
         perplexity:   { name: 'Perplexity Pro', usd: 20, currency: 'USD' },
         elevenlabs:   { name: 'ElevenLabs Creator', usd: 22, currency: 'USD' },
+        deepseek:     { name: 'DeepSeek', usd: 0, currency: 'USD', note: '종량제' },
         manus:        { name: 'Manus Pro', usd: 0, currency: 'USD', note: '크레딧제' },
         railway:      { name: 'Railway', usd: 0, currency: 'USD', note: 'Trial' },
         cloudflare:   { name: 'Cloudflare', usd: 0, currency: 'USD', note: 'Free' },
@@ -172,11 +173,13 @@ export default {
         services: {
           hermes:    { label: 'Hermes / Claude API',  sub: { name: null, usd: 0 },              api: apiCosts.hermes,    dashboard: 'https://console.anthropic.com/settings/usage' },
           openrouter:{ label: 'OpenRouter (Pareto)', sub: { name: null, usd: 0 },              api: apiCosts.openrouter, dashboard: 'https://openrouter.ai/settings/credits' },
-          anthropic: { label: 'Anthropic (Claude)',   sub: SUBSCRIPTIONS.anthropic, api: apiCosts.anthropic, dashboard: 'https://console.anthropic.com/settings/usage' },
-          openai:    { label: 'OpenAI (GPT)',         sub: SUBSCRIPTIONS.openai,    api: apiCosts.openai,    dashboard: 'https://platform.openai.com/settings/organization/billing' },
+          anthropic: { label: 'Anthropic (Claude)',   sub: SUBSCRIPTIONS.claude_pro, api: apiCosts.anthropic, dashboard: 'https://console.anthropic.com/settings/usage' },
+          openai:    { label: 'OpenAI (GPT)',         sub: SUBSCRIPTIONS.chatgpt_pro, api: apiCosts.openai,    dashboard: 'https://platform.openai.com/settings/organization/billing' },
           deepseek:  { label: 'DeepSeek',             sub: SUBSCRIPTIONS.deepseek,  api: apiCosts.deepseek,  dashboard: 'https://platform.deepseek.com/usage' },
           gemini:    { label: 'Google (Gemini)',       sub: SUBSCRIPTIONS.gemini,    api: apiCosts.gemini,    dashboard: 'https://console.cloud.google.com/billing' },
           perplexity:{ label: 'Perplexity Pro',        sub: SUBSCRIPTIONS.perplexity, api: null,             dashboard: 'https://www.perplexity.ai/settings/api' },
+          elevenlabs:{ label: 'ElevenLabs',            sub: SUBSCRIPTIONS.elevenlabs, api: null,             dashboard: 'https://elevenlabs.io/subscription' },
+          manus:     { label: 'Manus Pro',             sub: SUBSCRIPTIONS.manus,     api: null,               dashboard: 'https://manus.im' },
           railway:   { label: 'Railway',               sub: SUBSCRIPTIONS.railway,   api: null,               dashboard: 'https://railway.app/dashboard' },
           cloudflare:{ label: 'Cloudflare',            sub: SUBSCRIPTIONS.cloudflare, api: null,              dashboard: 'https://dash.cloudflare.com' },
         }
