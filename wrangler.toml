@@ -7,5 +7,10 @@ kv_namespaces = [
   { binding = "HUB_STATS",  id = "57dbeb79b2324ee8afff6228a5790ee2" }
 ]
 
+[[d1_databases]]
+binding = "BILLING_DB"
+database_name = "btr-billing-db"
+database_id = "bc5fa877-73c0-4800-bb04-fb62bcbabb77"
+
 [vars]
 # ADMIN_PASSWORD and ADMIN_SECRET are set via CF dashboard secrets
