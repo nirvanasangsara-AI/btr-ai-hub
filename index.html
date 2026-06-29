@@ -156,7 +156,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
   <div class="section-label">📊 LLM 사용량 — 모델별·시계열</div>
 </div>
 <div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px">
-  <canvas id="usageChart" style="max-height:280px"></canvas>
+  <div id="usageChart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <canvas id="usageChart" style="max-height:280px"></canvas>
+  </div>
   <div id="usage-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid#334155"></div>
 </div>
 
@@ -711,6 +713,9 @@ async function loadUsageChart() {
     document.getElementById('usage-legend').innerHTML = legendHtml;
     
     // Chart.js
+    const numDays = data.labels ? data.labels.length : 14;
+    const minWidth = Math.max(600, numDays * 40);
+    document.getElementById('usageChart').style.minWidth = minWidth + 'px';
     const ctx = document.getElementById('usageChart').getContext('2d');
     usageChart = new Chart(ctx, {
       type: 'line',
