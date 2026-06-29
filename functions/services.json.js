@@ -112,6 +112,14 @@ const DEFAULT_SERVICES = [
     url: "https://btr-credit-eval.pages.dev",
     desc: "BTR 거래처 신용도 평가 — 국세청·금융위 기반 721건 관리",
     visible: true
+  },
+  {
+    id: "vscope",
+    name: "진동소음 분석",
+    icon: "📳",
+    url: "https://btr-vibration-analysis.pages.dev",
+    desc: "Vscope .esv 파일 분석 — 제동거리·감속도·그래프 자동 보고서",
+    visible: true
   }
 ];
 
