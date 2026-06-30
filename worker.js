@@ -207,6 +207,33 @@ export default {
       return new Response(JSON.stringify({ ok: true }), { headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
+    // GET /api/billing-history — 서비스별 결제 이력 (KV 저장)
+    if (url.pathname === '/api/billing-history') {
+      const adminToken = request.headers.get('X-Admin-Token');
+      const expected = btoa((env.ADMIN_PASSWORD || '') + ':' + (env.ADMIN_SECRET || ''));
+      if (adminToken !== expected) return new Response('Unauthorized', { status: 401, headers: cors });
+      const service = url.searchParams.get('service') || '';
+      const key = 'billing_history_' + service.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const data = await env.HUB_CONFIG.get(key);
+      const transactions = data ? JSON.parse(data) : [];
+      return new Response(JSON.stringify(transactions), {
+        headers: { ...cors, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /api/billing-history — 결제 이력 저장
+    if (url.pathname === '/api/billing-history' && request.method === 'POST') {
+      const adminToken = request.headers.get('X-Admin-Token');
+      const expected = btoa((env.ADMIN_PASSWORD || '') + ':' + (env.ADMIN_SECRET || ''));
+      if (adminToken !== expected) return new Response('Unauthorized', { status: 401, headers: cors });
+      const body = await request.json();
+      const key = 'billing_history_' + (body.service || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const existing = JSON.parse(await env.HUB_CONFIG.get(key) || '[]');
+      existing.push({ ...body.transaction, id: Date.now() });
+      await env.HUB_CONFIG.put(key, JSON.stringify(existing));
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+    }
+
     return new Response('Not found', { status: 404 });
   }
 };
