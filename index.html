@@ -285,11 +285,16 @@ const COST_CONFIG = [
     note:'구독 $200 + API 잔액 $92.13', cycle:'매월 17일',
     card:'hyundai3202', billingDay:17, billingType:'monthly' },
   // ── xAI Grok ──
-  { key:'grok', label:'Grok (xAI)', logo:'/favicons/xai.ico',
+  { key:'grok', label:'Grok / SuperGrok', logo:'/favicons/xai.ico',
     sub:30.30, subName:'SuperGrok 월간 ₩44,000', apiAuto:false,
     dashboard:'https://grok.com',
     note:'App Store 매월 9일 갱신', cycle:'매월 9일',
     card:'hyundai3202', billingDay:9, billingType:'monthly' },
+  { key:'xai_api', label:'xAI API (Grok)', logo:'/favicons/xai.ico',
+    sub:0, subName:'Pay-as-you-go', apiAuto:true,
+    dashboard:'https://console.x.ai/team/9839c7f2-bfec-4f02-965b-1ce6e6cfa926/billing',
+    note:'크레딧 $20 충전 (2026-06-30). Grok-3-mini $0.30/1M', cycle:'사용량 기반',
+    card:'hyundai3202', billingDay:null, billingType:'usage' },
   // ── Google Gemini ──
   { key:'gemini', label:'Google Gemini', logo:'/favicons/google.ico',
     sub:20, subName:'Google One AI Premium $20/월', apiAuto:false,
@@ -841,6 +846,7 @@ async function loadUsageChart() {
         },
         scales: {
           x: {
+            stacked: true,
             grid: { color: 'rgba(148,163,184,0.1)' },
             ticks: { color: '#94a3b8', font: { size: 10 } }
           },
@@ -855,8 +861,8 @@ async function loadUsageChart() {
           }
         },
         elements: {
-          line: { tension: 0.4 },
-          point: { radius: 2 }
+          line: { tension: 0.3 },
+          point: { radius: 0 }
         }
       }
     });
