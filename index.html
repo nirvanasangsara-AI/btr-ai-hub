@@ -276,68 +276,88 @@ const COST_CONFIG = [
   { key:'anthropic', label:'Anthropic Claude', logo:'/favicons/anthropic.ico',
     sub:258, subName:'Claude Max 20x (₩375,000/월)', apiAuto:true,
     dashboard:'https://console.anthropic.com/settings/usage',
-    note:'구독 ₩375,000 + API 종량제 ($500 한도)', cycle:'매월 31일/매월 1일 리셋' },
+    note:'구독 ₩375,000 + API 종량제 ($500 한도)', cycle:'매월 31일/매월 1일 리셋',
+    card:'hyundai3202', billingDay:31, billingType:'monthly' },
   // ── OpenAI ── 구독 + API 통합 카드
   { key:'openai', label:'OpenAI ChatGPT', logo:'/favicons/openai.ico',
     sub:200, subName:'ChatGPT Pro $200/월', apiAuto:false,
     dashboard:'https://platform.openai.com/settings/organization/billing',
-    note:'구독 $200 + API 잔액 $92.13', cycle:'매월 17일' },
+    note:'구독 $200 + API 잔액 $92.13', cycle:'매월 17일',
+    card:'hyundai3202', billingDay:17, billingType:'monthly' },
   // ── xAI Grok ──
   { key:'grok', label:'Grok (xAI)', logo:'/favicons/xai.ico',
     sub:30.30, subName:'SuperGrok 월간 ₩44,000', apiAuto:false,
     dashboard:'https://grok.com',
-    note:'App Store 매월 9일 갱신', cycle:'매월 9일' },
+    note:'App Store 매월 9일 갱신', cycle:'매월 9일',
+    card:'hyundai3202', billingDay:9, billingType:'monthly' },
   // ── Google Gemini ──
   { key:'gemini', label:'Google Gemini', logo:'/favicons/google.ico',
     sub:20, subName:'Google One AI Premium $20/월', apiAuto:false,
     dashboard:'https://console.cloud.google.com/billing',
-    note:'API 사용량 별도 청구', cycle:'매월 1일' },
+    note:'API 사용량 별도 청구', cycle:'매월 1일',
+    card:'hyundai3202', billingDay:1, billingType:'monthly' },
   // ── Perplexity ──
   { key:'perplexity', label:'Perplexity Pro', logo:'/favicons/perplexity.ico',
     sub:20, subName:'Perplexity Pro $20/월', apiAuto:false,
     dashboard:'https://www.perplexity.ai/settings/api',
-    note:'연간 $200 결제', cycle:'연간 (12월)' },
+    note:'연간 $200 결제', cycle:'연간 (12월)',
+    card:'unknown', billingDay:null, billingType:'annual' },
   // ── ElevenLabs ──
   { key:'elevenlabs', label:'ElevenLabs', logo:'/favicons/elevenlabs.ico',
     sub:22, subName:'Creator $22/월', apiAuto:false,
     dashboard:'https://elevenlabs.io/app/subscription',
-    note:'TTS — 100k 크레딧/월', cycle:'매월 10일' },
+    note:'TTS — 100k 크레딧/월', cycle:'매월 10일',
+    card:'unknown', billingDay:10, billingType:'monthly' },
   // ── Higgsfield ──
   { key:'higgsfield', label:'Higgsfield', logo:'/favicons/higgsfield.ico',
     sub:32.34, subName:'Ultimate 연간 $388/년 (월환산 $32.34)', apiAuto:false,
     dashboard:'https://higgsfield.ai/me/settings/subscription',
-    note:'13개 모델 Unlimited · 1,200크레딧/월 · 갱신 2027-03-20', cycle:'2027-03-20' },
+    note:'13개 모델 Unlimited · 1,200크레딧/월 · 갱신 2027-03-20', cycle:'2027-03-20',
+    card:'hyundai3202', billingDay:20, billingType:'annual', nextDate:'2027-03-20' },
   // ── Suno ──
   { key:'suno', label:'Suno AI', logo:'/favicons/suno.ico',
     sub:9.65, subName:'Pro Plan ₩14,000/월', apiAuto:false,
     dashboard:'https://suno.com/account',
-    note:'AI 음악생성 — 매월 1일 갱신', cycle:'매월 1일' },
+    note:'AI 음악생성 — 매월 1일 갱신', cycle:'매월 1일',
+    card:'hyundai3202', billingDay:1, billingType:'monthly' },
   // ── DeepSeek ──
   { key:'deepseek', label:'DeepSeek', logo:'/favicons/deepseek.ico',
     sub:0, subName:null, apiAuto:true,
     dashboard:'https://platform.deepseek.com/usage',
-    note:'충전식 선불 — 잔액 $49.57', cycle:'충전식' },
+    note:'충전식 선불 — 잔액 $49.57', cycle:'충전식',
+    card:null, billingDay:null, billingType:'prepaid' },
   // ── Manus ──
   { key:'manus', label:'Manus Pro', logo:'/manus.png',
     sub:0, subName:'Manus Pro 연간', apiAuto:false,
     dashboard:'https://manus.im/app#settings/usage',
-    note:'크레딧제 — 잔여 76,751 / 85,000', creditTotal:85000, creditUsed:8249, cycle:'2027-01-29' },
+    note:'크레딧제 — 잔여 76,751 / 85,000', creditTotal:85000, creditUsed:8249, cycle:'2027-01-29',
+    card:'unknown', billingDay:29, billingType:'annual', nextDate:'2027-01-29' },
   // ── Cloudflare ──
   { key:'cloudflare', label:'Cloudflare', logo:'/favicons/cloudflare.ico',
     sub:0, subName:null, apiAuto:false,
     dashboard:'https://dash.cloudflare.com', isInfra:true,
-    note:'Free Tier — Pages/Workers/D1', cycle:'무료', isActive:true },
+    note:'Free Tier — Pages/Workers/D1', cycle:'무료', isActive:true,
+    card:null, billingType:'free' },
   // ── Railway ──
   { key:'railway', label:'Railway', logo:'/railway.png',
     sub:0, subName:'서버 호스팅', isInfra:true,
     dashboard:'https://railway.app/dashboard',
-    note:'Trial 크레딧 잔액', cycle:'무료', isActive:false },
+    note:'Trial 크레딧 잔액', cycle:'무료', isActive:false,
+    card:null, billingType:'free' },
   // ── Vercel ──
   { key:'vercel', label:'Vercel', logo:'/vercel.png',
     sub:0, subName:null, apiAuto:false,
     dashboard:'https://vercel.com/dashboard', isInfra:true,
-    note:'Hobby 무료', cycle:'무료', isActive:true },
+    note:'Hobby 무료', cycle:'무료', isActive:true,
+    card:null, billingType:'free' },
 ];
+
+// 카드 색상 정의
+const CARD_STYLES = {
+  hyundai3202: { name:'현대카드 ••3202', bg:'linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)', accent:'#e94560', logo:'💳', chip:'#c9a84c' },
+  hyundai6313: { name:'현대카드 6313', bg:'linear-gradient(135deg,#0d0d0d 0%,#1a1a1a 50%,#2d2d2d 100%)', accent:'#fff', logo:'💳', chip:'#b8a060' },
+  unknown:     { name:'카드 미확인', bg:'linear-gradient(135deg,#1e293b 0%,#334155 100%)', accent:'#94a3b8', logo:'❓', chip:'#64748b' },
+};
 
 // 수동 입력 저장소 (sessionStorage)
 function getManualCosts() {
@@ -483,13 +503,43 @@ async function loadAiCosts() {
 
     const logoHtml = cfg.logo ? `<img src="${cfg.logo}" style="width:20px;height:20px;border-radius:4px;margin-right:6px;vertical-align:middle" onerror="this.style.display='none'">` : (cfg.emoji || '');
     const statusBadge = cfg.isActive === false ? `<span style="font-size:.6rem;padding:2px 8px;border-radius:12px;background:#374151;color:#9ca3af;margin-left:6px">사용 안함</span>` : '';
-    const cycleHtml = cfg.cycle ? `<div style="font-size:.55rem;color:#475569;margin-top:2px">📅 ${cfg.cycle}</div>` : '';
+
+    // 미니 카드 + 결제 정보
+    let billingInfo = '';
+    if (cfg.card && CARD_STYLES[cfg.card]) {
+      const cs = CARD_STYLES[cfg.card];
+      const typeLabel = cfg.billingType === 'monthly' ? '월결제' : cfg.billingType === 'annual' ? '연간' : cfg.billingType === 'prepaid' ? '충전식' : '무료';
+      const nextBill = cfg.nextDate ? cfg.nextDate :
+        (cfg.billingDay && cfg.billingType === 'monthly') ? (() => {
+          const now = new Date(); const day = cfg.billingDay;
+          const next = new Date(now.getFullYear(), now.getMonth(), day);
+          if (next <= now) next.setMonth(next.getMonth() + 1);
+          return next.toLocaleDateString('ko-KR',{month:'short',day:'numeric'});
+        })() : null;
+      billingInfo = `
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <div style="width:48px;height:30px;border-radius:5px;background:${cs.bg};border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;justify-content:center;padding:0 5px;flex-shrink:0;position:relative;overflow:hidden">
+          <div style="position:absolute;right:3px;top:3px;width:8px;height:6px;border-radius:50%;background:${cs.chip};opacity:.8"></div>
+          <div style="font-size:.42rem;color:rgba(255,255,255,.5);line-height:1">💳</div>
+          <div style="font-size:.38rem;color:rgba(255,255,255,.7);letter-spacing:.5px;margin-top:1px">••${cs.name.slice(-4)}</div>
+        </div>
+        <div style="font-size:.6rem;color:#64748b;line-height:1.4">
+          <span style="background:#1e3a5f;color:#60a5fa;padding:1px 5px;border-radius:3px;font-size:.55rem">${typeLabel}</span>
+          ${nextBill ? `<span style="margin-left:4px;color:#94a3b8">다음 ${nextBill}</span>` : ''}
+        </div>
+      </div>`;
+    } else if (cfg.billingType === 'free') {
+      billingInfo = `<div style="font-size:.58rem;color:#22c55e;margin-top:5px">🆓 무료</div>`;
+    } else if (cfg.billingType === 'prepaid') {
+      billingInfo = `<div style="font-size:.58rem;color:#f59e0b;margin-top:5px">💰 충전식 선불</div>`;
+    }
+
     const cardOpacity = cfg.isActive === false ? 'opacity:0.6;' : '';
     return `<div class="cost-card" style="${cardOpacity}cursor:pointer" onclick="showCostDetail('${cfg.key}')">
       <div class="cost-header"><span class="cost-name">${logoHtml}${cfg.label}${statusBadge}</span></div>
       <div class="cost-rows">${subRow}${apiRow}${infraRow}${creditRow}</div>
       ${totalRow}
-      ${cycleHtml}
+      ${billingInfo}
       ${manualBtn}
       ${noteText}
       <a class="cost-link" href="${cfg.dashboard}" target="_blank">↗ 대시보드</a>
