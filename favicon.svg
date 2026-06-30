@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-<rect width="100" height="100" rx="16" fill="#0f172a"/>
-<rect x="8" y="8" width="84" height="84" rx="12" fill="none" stroke="#facc15" stroke-width="3"/>
-<text x="50" y="46" text-anchor="middle" font-size="22" font-family="sans-serif" font-weight="900" fill="#facc15">BTR</text>
-<text x="50" y="68" text-anchor="middle" font-size="14" font-family="sans-serif" font-weight="700" fill="#60a5fa">AI HUB</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="6" fill="#F5C800"/>
+  <text x="16" y="23" font-family="Arial Black, Arial" font-weight="900" font-size="22" 
+        text-anchor="middle" fill="#1a1a1a" letter-spacing="-1">B</text>
 </svg>
