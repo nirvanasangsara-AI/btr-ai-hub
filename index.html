@@ -162,6 +162,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
   <div id="usage-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid#334155"></div>
 </div>
 
+<!-- 작업유형별 비용 분석 -->
+<div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px">
+  <div style="font-size:.75rem;color:#64748b;font-weight:600;letter-spacing:.05em;margin-bottom:12px">⚙️ 작업유형별 비용 분석 (최근 30일)</div>
+  <div id="source-analysis" style="display:grid;gap:8px">
+    <div style="color:#475569;font-size:.8rem">로딩 중…</div>
+  </div>
+</div>
+
 <!-- AI 비용 섹션 — 항상 표시 (로그인 시 API 실시간 조회) -->
 <div id="cost-section">
   <div class="section">
@@ -891,6 +899,45 @@ function toggleDataset(idx) {
 
 // 초기 로드
 loadUsageChart();
+
+// ── 작업유형별 비용 분석 ──────────────────────────────────
+async function loadSourceAnalysis() {
+  try {
+    const r = await fetch('/api/usage-source');
+    if (!r.ok) return;
+    const d = await r.json();
+    const sources = d.sources || [];
+    const maxCost = Math.max(...sources.map(s => s.cost_usd), 0.001);
+
+    const SOURCE_ICONS = {
+      'Discord': '💬', 'Telegram': '📱', '크론작업': '⏰',
+      '서브에이전트': '🤖', 'CLI': '💻', '기타': '❓'
+    };
+
+    const html = sources.map(s => {
+      const pct = Math.round((s.cost_usd / maxCost) * 100);
+      const icon = SOURCE_ICONS[s.source] || '❓';
+      const tokStr = s.tokens >= 1e6 ? `${(s.tokens/1e6).toFixed(1)}M` : `${(s.tokens/1000).toFixed(0)}K`;
+      const modelBreakdown = Object.entries(s.model_breakdown || {})
+        .map(([m,c]) => `${m} $${c.toFixed(2)}`).join(' · ');
+      return `<div style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:8px;background:#0f172a;border-radius:8px">
+        <div style="font-size:.8rem;color:#e2e8f0;white-space:nowrap">${icon} ${s.source}</div>
+        <div style="position:relative;height:6px;background:#1e293b;border-radius:3px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:3px;transition:width .5s"></div>
+        </div>
+        <div style="text-align:right;min-width:120px">
+          <div style="font-size:.8rem;color:#e2e8f0;font-weight:600">$${s.cost_usd.toFixed(2)}</div>
+          <div style="font-size:.65rem;color:#475569">${tokStr} · ${s.sessions}세션 · top: ${s.top_model}</div>
+        </div>
+      </div>
+      <div style="font-size:.65rem;color:#334155;padding:0 8px 4px;margin-top:-4px">${modelBreakdown}</div>`;
+    }).join('');
+
+    document.getElementById('source-analysis').innerHTML = html ||
+      '<div style="color:#475569;font-size:.8rem">데이터 없음</div>';
+  } catch(e) { console.error('소스 분석 로드 실패:', e); }
+}
+loadSourceAnalysis();
 </script>
 <script src="/cost-modal.js"></script>
 

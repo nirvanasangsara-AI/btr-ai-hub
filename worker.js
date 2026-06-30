@@ -72,6 +72,7 @@ export default {
         perplexity:   { name: 'Perplexity Pro', usd: 20, currency: 'USD' },
         elevenlabs:   { name: 'ElevenLabs Creator', usd: 22, currency: 'USD' },
         grok:         { name: 'SuperGrok', usd: 30.30, currency: 'USD', note: '₩44,000/월 App Store' },
+        xai_api:      { name: 'xAI API', usd: 0, currency: 'USD', note: '크레딧 $20 충전 2026-06-30, Grok-3-mini' },
         higgsfield:   { name: 'Higgsfield Ultimate', usd: 32.34, currency: 'USD', note: '연간 $388, 갱신 2027-03-20' },
         suno:         { name: 'Suno Pro', usd: 9.65, currency: 'USD', note: '₩14,000/월' },
         manus:        { name: 'Manus Pro', usd: 0, currency: 'USD', note: '크레딧제' },
