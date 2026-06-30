@@ -903,7 +903,7 @@ loadUsageChart();
 // ── 작업유형별 비용 분석 ──────────────────────────────────
 async function loadSourceAnalysis() {
   try {
-    const r = await fetch('/api/usage-source');
+    const r = await fetch('/api/usage-chart?type=source');
     if (!r.ok) return;
     const d = await r.json();
     const sources = d.sources || [];
