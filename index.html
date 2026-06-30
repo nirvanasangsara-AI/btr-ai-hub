@@ -584,7 +584,7 @@ function promptManual(key, label) {
 async function load() {
   let services = [];
   try {
-    const r = await fetch('/services.json?t=' + Date.now());
+    const r = await fetch('/api/services?t=' + Date.now());
     services = await r.json();
   } catch(e) {}
   ALL_SERVICES = services;
