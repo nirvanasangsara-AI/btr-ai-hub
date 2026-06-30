@@ -1,8 +1,17 @@
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ env, request }) {
   const cors = {
     'Access-Control-Allow-Origin': '*',
     'Content-Type': 'application/json'
   };
+
+  const url = new URL(request.url);
+
+  // /api/usage-source 처리 (하이픈 라우팅 버그 우회)
+  if (url.pathname.endsWith('/usage-source')) {
+    const raw = await env.HUB_CONFIG.get('usage_by_source');
+    if (!raw) return new Response(JSON.stringify({sources: [], updated: null}), { headers: cors });
+    return new Response(raw, { headers: cors });
+  }
 
   // KV에서 사용량 데이터 읽기
   const raw = await env.HUB_CONFIG.get('usage_chart');
