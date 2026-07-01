@@ -191,6 +191,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
   </div>
 </div>
 
+<!-- 로컬 LLM 섹션 -->
+<div id="local-llm-section" style="margin:0 0 24px">
+  <div class="section">
+    <div class="section-label">🖥️ 로컬 LLM 현황 — Mac mini M4</div>
+  </div>
+  <div id="local-llm-summary" style="background:#0f172a;border:1px solid #1e3a5f;border-radius:12px;margin:0 28px 16px;padding:16px 20px;display:flex;flex-wrap:wrap;gap:24px;align-items:center">
+    <div style="text-align:center">
+      <div style="font-size:.65rem;color:#64748b;margin-bottom:4px">설치 모델</div>
+      <div id="llm-model-count" style="font-size:1.4rem;font-weight:700;color:#60a5fa">—</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:.65rem;color:#64748b;margin-bottom:4px">이달 호출</div>
+      <div id="llm-call-count" style="font-size:1.4rem;font-weight:700;color:#4ade80">—</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:.65rem;color:#64748b;margin-bottom:4px">처리 토큰</div>
+      <div id="llm-token-count" style="font-size:1.4rem;font-weight:700;color:#a78bfa">—</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:.65rem;color:#64748b;margin-bottom:4px">☁️ 클라우드 절감 추정</div>
+      <div id="llm-savings" style="font-size:1.4rem;font-weight:700;color:#f59e0b">—</div>
+    </div>
+    <div style="margin-left:auto;font-size:.6rem;color:#334155;text-align:right" id="llm-updated">업데이트: —</div>
+  </div>
+  <div id="local-llm-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;padding:0 28px 20px">
+    <div style="color:#475569;font-size:.8rem;padding:20px">로컬 LLM 데이터 로딩 중…</div>
+  </div>
+</div>
+
 <div class="footer">BTR 수성 내부 전용 · 무단 공유 금지</div>
 
 <div class="drag-save-toast" id="drag-toast">✓ 순서 저장됨</div>
@@ -601,6 +630,7 @@ async function load() {
 
   renderGrid(services, IS_OWNER, stats);
   loadAiCosts();
+  loadLocalLLM();
   if (IS_OWNER) applyOwnerView();
 }
 
@@ -813,6 +843,68 @@ load();
 // LLM 사용량 그래프
 let usageChart;
 const visibleDatasets = new Set();
+
+async function loadLocalLLM() {
+  // KV에서 ollama_stats 읽기
+  let data = null;
+  try {
+    const r = await fetch('/api/ollama-stats?t=' + Date.now());
+    if (r.ok) data = await r.json();
+  } catch(e) {}
+
+  const grid = document.getElementById('local-llm-grid');
+
+  // 모델 목록은 항상 하드코딩 (설치된 모델 기반)
+  const MODELS = [
+    { name: 'qwen3:8b',         label: 'Qwen3 8B',          icon: '🤖', use: '범용 · 일상 작업', size: '5.2GB', color: '#3b82f6' },
+    { name: 'deepseek-r1:8b',   label: 'DeepSeek-R1 8B',    icon: '🧮', use: '추론 · 분석',      size: '5.2GB', color: '#8b5cf6' },
+    { name: 'qwen2.5-coder:7b', label: 'Qwen2.5-Coder 7B',  icon: '💻', use: '코딩 특화',        size: '4.7GB', color: '#10b981' },
+  ];
+
+  const stats = data && data.models ? data.models : {};
+  const totalCalls = MODELS.reduce((s, m) => s + (stats[m.name]?.calls || 0), 0);
+  const totalTokens = MODELS.reduce((s, m) => s + (stats[m.name]?.tokens || 0), 0);
+  // 절감 추정: 토큰당 Claude Haiku 기준 $0.00025
+  const savings = totalTokens * 0.00025;
+
+  document.getElementById('llm-model-count').textContent = MODELS.length + '개';
+  document.getElementById('llm-call-count').textContent = totalCalls > 0 ? totalCalls.toLocaleString() + '회' : '집계 중';
+  document.getElementById('llm-token-count').textContent = totalTokens > 0 ? (totalTokens/1000).toFixed(1) + 'K' : '집계 중';
+  document.getElementById('llm-savings').textContent = savings > 0 ? '$' + savings.toFixed(2) : '—';
+  document.getElementById('llm-updated').textContent = data && data.updated ? '업데이트: ' + new Date(data.updated).toLocaleString('ko-KR') : '업데이트: 크론 대기 중';
+
+  grid.innerHTML = MODELS.map(m => {
+    const ms = stats[m.name] || {};
+    const calls = ms.calls || 0;
+    const tokens = ms.tokens || 0;
+    const lastUsed = ms.last_used ? new Date(ms.last_used).toLocaleDateString('ko-KR') : '—';
+    return `<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:1.4rem">${m.icon}</span>
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:#e2e8f0">${m.label}</div>
+          <div style="font-size:.6rem;color:#64748b">${m.use}</div>
+        </div>
+        <span style="margin-left:auto;font-size:.6rem;background:#1e293b;color:#94a3b8;padding:2px 6px;border-radius:4px">${m.size}</span>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:4px">
+        <div style="text-align:center;flex:1">
+          <div style="font-size:.6rem;color:#64748b">호출</div>
+          <div style="font-size:1rem;font-weight:700;color:${m.color}">${calls > 0 ? calls : '—'}</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:.6rem;color:#64748b">토큰</div>
+          <div style="font-size:1rem;font-weight:700;color:${m.color}">${tokens > 0 ? (tokens/1000).toFixed(1)+'K' : '—'}</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:.6rem;color:#64748b">최근사용</div>
+          <div style="font-size:.7rem;color:#94a3b8">${lastUsed}</div>
+        </div>
+      </div>
+      <div style="font-size:.6rem;color:#1e3a5f;background:#0f2040;border-radius:4px;padding:4px 8px;text-align:center">🆓 무료 · Mac mini 로컬</div>
+    </div>`;
+  }).join('');
+}
 
 async function loadUsageChart() {
   try {

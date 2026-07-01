@@ -234,6 +234,26 @@ export default {
       return new Response(JSON.stringify({ ok: true }), { headers: { ...cors, 'Content-Type': 'application/json' } });
     }
 
+    // GET /api/ollama-stats — 로컬 LLM 사용 현황 (KV에서 읽기)
+    if (url.pathname === '/api/ollama-stats') {
+      const data = await env.HUB_CONFIG.get('ollama_stats_v1');
+      if (!data) return new Response(JSON.stringify({ models: {}, updated: null }), {
+        headers: { ...cors, 'Content-Type': 'application/json' }
+      });
+      return new Response(data, { headers: { ...cors, 'Content-Type': 'application/json' } });
+    }
+
+    // POST /api/ollama-stats — Mac mini 크론잡이 통계 업데이트
+    if (url.pathname === '/api/ollama-stats' && request.method === 'POST') {
+      const adminToken = request.headers.get('X-Admin-Token');
+      const expected = btoa((env.ADMIN_PASSWORD || '') + ':' + (env.ADMIN_SECRET || ''));
+      if (adminToken !== expected) return new Response('Unauthorized', { status: 401, headers: cors });
+      const body = await request.json();
+      body.updated = new Date().toISOString();
+      await env.HUB_CONFIG.put('ollama_stats_v1', JSON.stringify(body));
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...cors, 'Content-Type': 'application/json' } });
+    }
+
     return new Response('Not found', { status: 404 });
   }
 };
