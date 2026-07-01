@@ -71,9 +71,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 /* API 비용 카드 */
 .cost-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:0 28px 20px}
 @media(min-width:640px){.cost-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
-.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:12px;transition:border-color .15s}
+.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:12px;transition:border-color .15s;display:flex;flex-direction:column;height:100%}
 @media(min-width:640px){.cost-card{padding:16px}}
 .cost-card:hover{border-color:#4ade80}
+/* 카드 본문(가변) + 하단 결제/링크(고정 정렬) */
+.cost-body{display:flex;flex-direction:column;flex:1 1 auto}
+.cost-foot{margin-top:auto;padding-top:10px;border-top:1px solid #16233a;display:flex;flex-direction:column;gap:8px}
 .toggle-vis:hover{border-color:#6b7280;color:#94a3b8}
 .toggle-vis.visible{border-color:#1d4ed8;color:#60a5fa}
 
@@ -87,24 +90,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 
 /* 오너뷰 토글 버튼 */
 .cost-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.cost-name{font-size:.85rem;font-weight:700;color:#f1f5f9}
-.cost-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.cost-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:#0f172a}
-.cost-row-label{font-size:.72rem;color:#64748b;display:flex;align-items:center;gap:5px}
-.cost-badge{font-size:.62rem;padding:1px 6px;border-radius:99px;font-weight:700}
+.cost-name{font-size:.85rem;font-weight:700;color:#f1f5f9;display:flex;align-items:center;min-width:0}
+.cost-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.cost-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:6px;background:#0f172a}
+.cost-row-label{font-size:.72rem;color:#64748b;display:flex;align-items:center;gap:5px;min-width:0;flex:1 1 auto}
+.cost-badge{font-size:.62rem;padding:2px 7px;border-radius:99px;font-weight:700;white-space:nowrap;flex-shrink:0;line-height:1.4}
 .badge-api{background:#1e3a5f;color:#60a5fa}
 .badge-sub{background:#1a2e1a;color:#4ade80}
 .badge-infra{background:#2d1f3d;color:#a78bfa}
-.cost-row-val{font-size:.85rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
+.cost-row-val{font-size:.85rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap}
 .cost-row-val.loading{color:#475569}
 .cost-row-val.manual{color:#f59e0b}
 .cost-divider{border:none;border-top:1px solid #1e3a5f;margin:8px 0}
 .cost-total-row{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
 .cost-total-label{font-size:.72rem;color:#94a3b8;font-weight:600}
 .cost-total-val{font-size:1rem;font-weight:800;color:#4ade80;font-variant-numeric:tabular-nums}
-.cost-link{font-size:.68rem;color:#3b82f6;text-decoration:none;display:block;margin-top:8px;text-align:right}
+.cost-link{font-size:.68rem;color:#3b82f6;text-decoration:none;display:block;margin-top:0;text-align:right}
 .cost-link:hover{color:#60a5fa}
-.cost-manual-btn{font-size:.65rem;color:#f59e0b;background:none;border:1px solid #78350f;border-radius:4px;padding:2px 8px;cursor:pointer}
+.cost-manual-btn{font-size:.65rem;color:#f59e0b;background:none;border:1px solid #78350f;border-radius:4px;padding:3px 9px;cursor:pointer;align-self:flex-start;margin-top:2px;transition:.15s}
+.cost-manual-btn:hover{background:#78350f22;border-color:#b45309}
 .cost-total-summary{background:#0f172a;border:1px solid #22c55e;border-radius:12px;padding:16px 20px;margin:0 28px 16px}
 .cts-title{font-size:.7rem;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
 .cts-rows{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:10px}
@@ -114,6 +118,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 .cts-val{font-size:1.1rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
 .cts-grand{font-size:1.5rem;font-weight:800;color:#4ade80;margin-top:4px}
 .cts-note{font-size:.65rem;color:#475569;margin-top:6px}
+.cts-roi{font-size:.8rem;color:#94a3b8;margin-top:6px;padding-top:8px;border-top:1px dashed #1e3a5f}
+.cts-roi b{color:#4ade80;font-variant-numeric:tabular-nums}
+.cts-roi .roi-under{color:#f59e0b}
+/* 사용량 토큰/비용 토글 */
+.usage-toggle{display:inline-flex;background:#0f172a;border:1px solid #1e3a5f;border-radius:8px;padding:2px}
+.um-btn{font-size:.7rem;color:#64748b;background:none;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;transition:.15s}
+.um-btn.active{background:#1e3a5f;color:#e2e8f0;font-weight:700}
+/* 결제 D-n 배지 */
+.dn-badge{font-size:.55rem;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px;white-space:nowrap}
+.dn-soon{background:#7f1d1d;color:#fca5a5}
+.dn-near{background:#78350f;color:#fcd34d}
+.dn-far{background:#1e3a5f;color:#93c5fd}
+/* 구독 활용도(ROI) 바 */
+.roi-box{margin-top:8px;padding:7px 9px;border-radius:7px;background:#0f172a;border:1px solid #1e3a5f}
+.roi-top{display:flex;justify-content:space-between;align-items:baseline;font-size:.66rem;color:#94a3b8;margin-bottom:5px}
+.roi-top b{font-variant-numeric:tabular-nums}
+.roi-bar{position:relative;height:6px;background:#1e293b;border-radius:3px;overflow:hidden}
+.roi-fill{position:absolute;left:0;top:0;height:100%;border-radius:3px;transition:width .5s}
+.roi-pct{font-size:.62rem;font-weight:700;font-variant-numeric:tabular-nums}
 /* 로그인 모달 */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
@@ -153,18 +176,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 </div>
 
 <!-- LLM 사용량 그래프 -->
-<div class="section" style="margin-top:20px">
-  <div class="section-label">📊 LLM 사용량 — 모델별·시계열</div>
-</div>
-<div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px">
-  <div id="usageChart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-    <canvas id="usageChart" style="max-height:280px"></canvas>
+<div class="section" style="margin-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <div class="section-label">📊 LLM 사용량 — 모델별 리본 · 최근 30일 (오늘 기준)</div>
+  <div class="usage-toggle" id="usage-mode-toggle">
+    <button class="um-btn active" data-mode="tokens" onclick="setUsageMode('tokens')">🔢 토큰</button>
+    <button class="um-btn" data-mode="cost" onclick="setUsageMode('cost')">💵 비용(추정)</button>
   </div>
-  <div id="usage-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid#334155"></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;margin:0 14px 20px">
+  <div style="flex:3 1 460px;min-width:0;background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;padding:16px">
+    <div id="usageChart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <canvas id="usageChart" style="max-height:280px"></canvas>
+    </div>
+    <div id="usage-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid#334155"></div>
+  </div>
+  <div style="flex:1 1 220px;min-width:0;background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;padding:16px;display:flex;flex-direction:column">
+    <div style="font-size:.72rem;color:#64748b;font-weight:600;margin-bottom:10px">🍩 모델 믹스 (30일)</div>
+    <div style="position:relative;flex:1;min-height:200px"><canvas id="usageDonut"></canvas></div>
+    <div id="usage-donut-total" style="text-align:center;font-size:.7rem;color:#94a3b8;margin-top:8px"></div>
+  </div>
 </div>
 
 <!-- 작업유형별 비용 분석 -->
-<div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px">
+<div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px;max-width:460px">
   <div style="font-size:.75rem;color:#64748b;font-weight:600;letter-spacing:.05em;margin-bottom:12px">⚙️ 작업유형별 비용 분석 (최근 30일)</div>
   <div id="source-analysis" style="display:grid;gap:8px">
     <div style="color:#475569;font-size:.8rem">로딩 중…</div>
@@ -184,11 +218,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
       <div class="cts-item"><div class="cts-label">인프라·서버</div><div class="cts-val" id="sum-infra">—</div></div>
     </div>
     <div class="cts-grand" id="sum-grand">—</div>
+    <div class="cts-roi" id="sum-roi" style="display:none"></div>
     <div class="cts-note" id="sum-note">로그인 시 API 실시간 조회 (DeepSeek 잔액 · OpenAI 사용량 · OpenRouter)</div>
   </div>
-  <div class="cost-grid" id="cost-grid">
+
+  <div class="section"><div class="section-label">📋 구독 · 정액제</div></div>
+  <div class="cost-grid" id="cost-grid-sub">
     <div style="color:#475569;font-size:.8rem;padding:20px">비용 데이터 로딩 중…</div>
   </div>
+  <div class="section" id="sec-api-label"><div class="section-label">⚡ API · 종량 · 충전식</div></div>
+  <div class="cost-grid" id="cost-grid-api"></div>
+  <div class="section" id="sec-infra-label"><div class="section-label">🖥️ 인프라 · 서버</div></div>
+  <div class="cost-grid" id="cost-grid-infra"></div>
 </div>
 
 <!-- 로컬 LLM 섹션 -->
@@ -311,84 +352,84 @@ function applyOwnerView() {
 // ── AI 비용 로드 ──────────────────────────────────────────
 const COST_CONFIG = [
   // ── Anthropic ── 구독 + API 통합 카드
-  { key:'anthropic', label:'Anthropic Claude', logo:'/favicons/anthropic.ico',
+  { key:'anthropic', label:'Anthropic Claude', logo:'/anthropic.svg',
     sub:258, subName:'Claude Max 20x (₩375,000/월)', apiAuto:true,
     dashboard:'https://console.anthropic.com/settings/usage',
     note:'구독 ₩375,000 + API 종량제 ($500 한도)', cycle:'매월 31일/매월 1일 리셋',
     card:'hyundaiPurple', billingDay:31, billingType:'monthly' },
   // ── OpenAI ── 구독 + API 통합 카드
-  { key:'openai', label:'OpenAI ChatGPT', logo:'/favicons/openai.ico',
+  { key:'openai', label:'OpenAI ChatGPT', logo:'/openai.svg',
     sub:200, subName:'ChatGPT Pro $200/월', apiAuto:false,
     dashboard:'https://platform.openai.com/settings/organization/billing',
     note:'구독 $200 + API 잔액 $92.13', cycle:'매월 17일',
     card:'hyundaiPurple', billingDay:17, billingType:'monthly' },
   // ── xAI Grok ──
-  { key:'grok', label:'Grok / SuperGrok', logo:'/favicons/xai.ico',
+  { key:'grok', label:'Grok / SuperGrok', logo:'/xai.svg',
     sub:30.30, subName:'SuperGrok 월간 ₩44,000', apiAuto:false,
     dashboard:'https://grok.com',
     note:'App Store 매월 9일 갱신', cycle:'매월 9일',
     card:'hyundaiPurple', billingDay:9, billingType:'monthly' },
-  { key:'xai_api', label:'xAI API (Grok)', logo:'/favicons/xai.ico',
+  { key:'xai_api', label:'xAI API (Grok)', logo:'/xai.svg',
     sub:0, subName:'Pay-as-you-go', apiAuto:true,
     dashboard:'https://console.x.ai/team/9839c7f2-bfec-4f02-965b-1ce6e6cfa926/billing',
     note:'크레딧 $20 충전 (2026-06-30). Grok-3-mini $0.30/1M', cycle:'사용량 기반',
     card:'hyundaiPurple', billingDay:null, billingType:'usage' },
   // ── Google Gemini ──
-  { key:'gemini', label:'Google Gemini', logo:'/favicons/google.ico',
+  { key:'gemini', label:'Google Gemini', logo:'/gemini.svg',
     sub:20, subName:'Google One AI Premium $20/월', apiAuto:false,
     dashboard:'https://console.cloud.google.com/billing',
     note:'API 사용량 별도 청구', cycle:'매월 1일',
     card:'hyundaiPurple', billingDay:1, billingType:'monthly' },
   // ── Perplexity ──
-  { key:'perplexity', label:'Perplexity Pro', logo:'/favicons/perplexity.ico',
+  { key:'perplexity', label:'Perplexity Pro', logo:'/perplexity.svg',
     sub:20, subName:'Perplexity Pro $20/월', apiAuto:false,
     dashboard:'https://www.perplexity.ai/settings/api',
     note:'연간 $200 결제', cycle:'연간 (12월)',
     card:'unknown', billingDay:null, billingType:'annual' },
   // ── ElevenLabs ──
-  { key:'elevenlabs', label:'ElevenLabs', logo:'/favicons/elevenlabs.ico',
+  { key:'elevenlabs', label:'ElevenLabs', logo:'/elevenlabs.svg',
     sub:22, subName:'Creator 연간 $220/년 (월환산 $22)', apiAuto:false,
     dashboard:'https://elevenlabs.io/app/subscription',
     note:'TTS — 100k 크레딧/월 · 갱신 2026-09-05', cycle:'2026-09-05',
     card:'hyundaiPurple', billingDay:5, billingType:'annual', nextDate:'2026-09-05' },
   // ── Higgsfield ──
-  { key:'higgsfield', label:'Higgsfield', logo:'/favicons/higgsfield.ico',
+  { key:'higgsfield', label:'Higgsfield', logo:'/higgsfield.svg',
     sub:32.34, subName:'Ultimate 연간 $388/년 (월환산 $32.34)', apiAuto:false,
     dashboard:'https://higgsfield.ai/me/settings/subscription',
     note:'13개 모델 Unlimited · 1,200크레딧/월 · 갱신 2027-03-20', cycle:'2027-03-20',
     card:'hyundaiPurple', billingDay:20, billingType:'annual', nextDate:'2027-03-20' },
   // ── Suno ──
-  { key:'suno', label:'Suno AI', logo:'/favicons/suno.ico',
+  { key:'suno', label:'Suno AI', logo:'/suno.svg',
     sub:9.65, subName:'Pro Plan ₩14,000/월', apiAuto:false,
     dashboard:'https://suno.com/account',
     note:'AI 음악생성 — 매월 1일 갱신', cycle:'매월 1일',
     card:'hyundaiPurple', billingDay:1, billingType:'monthly' },
   // ── DeepSeek ──
-  { key:'deepseek', label:'DeepSeek', logo:'/favicons/deepseek.ico',
+  { key:'deepseek', label:'DeepSeek', logo:'/deepseek.svg',
     sub:0, subName:null, apiAuto:true,
     dashboard:'https://platform.deepseek.com/usage',
     note:'충전식 선불 — 잔액 $49.57', cycle:'충전식',
     card:null, billingDay:null, billingType:'prepaid' },
   // ── Manus ──
-  { key:'manus', label:'Manus Pro', logo:'/manus.png',
+  { key:'manus', label:'Manus Pro', logo:'/manus.svg',
     sub:0, subName:'Manus Pro 연간', apiAuto:false,
     dashboard:'https://manus.im/app#settings/usage',
     note:'크레딧제 — 잔여 76,751 / 85,000', creditTotal:85000, creditUsed:8249, cycle:'2027-01-29',
     card:'unknown', billingDay:29, billingType:'annual', nextDate:'2027-01-29' },
   // ── Cloudflare ──
-  { key:'cloudflare', label:'Cloudflare', logo:'/favicons/cloudflare.ico',
+  { key:'cloudflare', label:'Cloudflare', logo:'/cloudflare.png',
     sub:0, subName:null, apiAuto:false,
     dashboard:'https://dash.cloudflare.com', isInfra:true,
     note:'Free Tier — Pages/Workers/D1', cycle:'무료', isActive:true,
     card:null, billingType:'free' },
   // ── Railway ──
-  { key:'railway', label:'Railway', logo:'/railway.png',
+  { key:'railway', label:'Railway', logo:'/railway.svg',
     sub:0, subName:'서버 호스팅', isInfra:true,
     dashboard:'https://railway.app/dashboard',
     note:'Trial 크레딧 잔액', cycle:'무료', isActive:false,
     card:null, billingType:'free' },
   // ── Vercel ──
-  { key:'vercel', label:'Vercel', logo:'/vercel.png',
+  { key:'vercel', label:'Vercel', logo:'/vercel.svg',
     sub:0, subName:null, apiAuto:false,
     dashboard:'https://vercel.com/dashboard', isInfra:true,
     note:'Hobby 무료', cycle:'무료', isActive:true,
@@ -403,6 +444,53 @@ const CARD_STYLES = {
   unknown:       { name:'카드 미확인', bg:'linear-gradient(135deg,#1e293b 0%,#334155 100%)', accent:'#94a3b8', logo:'❓', chip:'#64748b' },
 };
 
+// ── 환율 · 섹션 분류 · 결제 D-n · ROI 헬퍼 ──────────────────
+const USD_KRW = 1380; // 수동 환율(₩ 병기용)
+const won = usd => '₩' + Math.round(usd * USD_KRW).toLocaleString();
+let roiData = null;
+
+function sectionOf(cfg) {
+  if (cfg.isInfra) return 'infra';
+  if (!(cfg.sub > 0) && (cfg.billingType === 'usage' || cfg.billingType === 'prepaid')) return 'api';
+  return 'sub';
+}
+function daysUntil(cfg) {
+  const now = new Date();
+  let next = null;
+  if (cfg.nextDate) next = new Date(cfg.nextDate + 'T00:00:00');
+  else if (cfg.billingDay && cfg.billingType === 'monthly') {
+    next = new Date(now.getFullYear(), now.getMonth(), cfg.billingDay);
+    if (next <= now) next.setMonth(next.getMonth() + 1);
+  }
+  if (!next || isNaN(next)) return null;
+  return Math.max(0, Math.ceil((next - now) / 86400000));
+}
+function dnBadge(cfg) {
+  const d = daysUntil(cfg);
+  if (d === null) return '';
+  const cls = d <= 7 ? 'dn-soon' : d <= 14 ? 'dn-near' : 'dn-far';
+  return `<span class="dn-badge ${cls}">D-${d}</span>`;
+}
+// 구독 활용도(ROI) 바 — API 환산가치 vs 구독료
+function roiBox(cfg, subUsd) {
+  const r = roiData && roiData.subscriptions && roiData.subscriptions[cfg.key];
+  if (!r || !(subUsd > 0) || r.api_equiv_usd == null) return '';
+  const equiv = r.api_equiv_usd;
+  const pct = Math.round(equiv / subUsd * 100);
+  const over = pct >= 100;
+  const w = Math.min(100, pct);
+  const color = over ? 'linear-gradient(90deg,#22c55e,#4ade80)' : 'linear-gradient(90deg,#f59e0b,#fbbf24)';
+  const tot = (r.tokens_in || 0) + (r.tokens_out || 0);
+  const tk = tot >= 1e6 ? (tot / 1e6).toFixed(1) + 'M' : Math.round(tot / 1e3) + 'K';
+  const foot = over ? `본전 초과 +$${(equiv - subUsd).toFixed(0)} 이득` : `여유 $${(subUsd - equiv).toFixed(0)} — 더 써도 됨`;
+  return `<div class="roi-box">
+    <div class="roi-top"><span>활용도 · API환산 <b>$${equiv.toFixed(0)}</b> / 구독 $${subUsd.toFixed(0)}</span>
+      <span class="roi-pct" style="color:${over ? '#4ade80' : '#f59e0b'}">${pct}%</span></div>
+    <div class="roi-bar"><div class="roi-fill" style="width:${w}%;background:${color}"></div></div>
+    <div style="font-size:.58rem;color:#475569;margin-top:4px">${tk} 토큰 · ${foot}</div>
+  </div>`;
+}
+
 // 수동 입력 저장소 (sessionStorage)
 function getManualCosts() {
   try { return JSON.parse(sessionStorage.getItem('manual_costs') || '{}'); } catch{ return {}; }
@@ -413,8 +501,8 @@ function setManualCost(key, usd) {
 }
 
 async function loadAiCosts() {
-  const grid = document.getElementById('cost-grid');
-  grid.innerHTML = '<div style="color:#475569;font-size:.8rem;padding:20px">Worker에서 데이터 조회 중…</div>';
+  const gridSub = document.getElementById('cost-grid-sub');
+  if (gridSub) gridSub.innerHTML = '<div style="color:#475569;font-size:.8rem;padding:20px">Worker에서 데이터 조회 중…</div>';
 
   let workerData = null;
   try {
@@ -424,11 +512,18 @@ async function loadAiCosts() {
     if (r.ok) workerData = await r.json();
   } catch(e) { console.warn('ai-costs 조회 실패', e); }
 
+  // 구독 활용도(ROI) 데이터
+  try {
+    const rr = await fetch('/api/usage-chart?type=roi');
+    if (rr.ok) roiData = await rr.json();
+  } catch(e) { console.warn('roi 조회 실패', e); }
+
   const manual = getManualCosts();
 
-  // 카드 렌더
+  // 카드 렌더 (구독 / API / 인프라 3섹션)
   let sumSub = 0, sumApi = 0, sumInfra = 0;
-  const cards = COST_CONFIG.map(cfg => {
+  const buckets = { sub: [], api: [], infra: [] };
+  COST_CONFIG.forEach(cfg => {
     const wd = workerData && workerData.services && workerData.services[cfg.key];
     const subUsd = cfg.sub || 0;
     if (cfg.isInfra) sumInfra += subUsd;
@@ -541,11 +636,11 @@ async function loadAiCosts() {
       </div>` : '';
 
     const manualBtn = (cfg.apiAuto === false && !cfg.isInfra && cfg.key !== 'perplexity') ? `
-      <button class="cost-manual-btn" onclick="promptManual('${cfg.key}','${cfg.label}')">✏️ 직접입력</button>` : '';
+      <button class="cost-manual-btn" onclick="event.stopPropagation();promptManual('${cfg.key}','${cfg.label}')">✏️ 직접입력</button>` : '';
 
-    const noteText = cfg.note ? `<div style="font-size:.65rem;color:#334155;margin-top:4px">${cfg.note}</div>` : '';
+    const noteText = cfg.note ? `<div style="font-size:.65rem;color:#64748b;line-height:1.45;margin-top:6px">${cfg.note}</div>` : '';
 
-    const logoHtml = cfg.logo ? `<img src="${cfg.logo}" style="width:20px;height:20px;border-radius:4px;margin-right:6px;vertical-align:middle" onerror="this.style.display='none'">` : (cfg.emoji || '');
+    const logoHtml = cfg.logo ? `<img src="${cfg.logo}" alt="" width="22" height="22" style="width:22px;height:22px;border-radius:5px;margin-right:7px;vertical-align:middle;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">` : (cfg.emoji || '');
     const statusBadge = cfg.isActive === false ? `<span style="font-size:.6rem;padding:2px 8px;border-radius:12px;background:#374151;color:#9ca3af;margin-left:6px">사용 안함</span>` : '';
 
     // 미니 카드 + 결제 정보
@@ -561,7 +656,7 @@ async function loadAiCosts() {
           return next.toLocaleDateString('ko-KR',{month:'short',day:'numeric'});
         })() : null;
       billingInfo = `
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+      <div style="display:flex;align-items:center;gap:8px">
         <div style="width:48px;height:30px;border-radius:5px;background:${cs.bg};border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;justify-content:center;padding:0 5px;flex-shrink:0;position:relative;overflow:hidden">
           <div style="position:absolute;right:3px;top:3px;width:8px;height:6px;border-radius:50%;background:${cs.chip};opacity:.8"></div>
           <div style="font-size:.42rem;color:rgba(255,255,255,.5);line-height:1">💳</div>
@@ -569,37 +664,70 @@ async function loadAiCosts() {
         </div>
         <div style="font-size:.6rem;color:#64748b;line-height:1.4">
           <span style="background:#1e3a5f;color:#60a5fa;padding:1px 5px;border-radius:3px;font-size:.55rem">${typeLabel}</span>
-          ${nextBill ? `<span style="margin-left:4px;color:#94a3b8">다음 ${nextBill}</span>` : ''}
+          ${nextBill ? `<span style="margin-left:4px;color:#94a3b8">다음 ${nextBill}</span>` : ''}${dnBadge(cfg)}
         </div>
       </div>`;
     } else if (cfg.billingType === 'free') {
-      billingInfo = `<div style="font-size:.58rem;color:#22c55e;margin-top:5px">🆓 무료</div>`;
+      billingInfo = `<div style="font-size:.62rem;color:#22c55e">🆓 무료</div>`;
     } else if (cfg.billingType === 'prepaid') {
-      billingInfo = `<div style="font-size:.58rem;color:#f59e0b;margin-top:5px">💰 충전식 선불</div>`;
+      billingInfo = `<div style="font-size:.62rem;color:#f59e0b">💰 충전식 선불</div>`;
     }
 
     const cardOpacity = cfg.isActive === false ? 'opacity:0.6;' : '';
-    return `<div class="cost-card" style="${cardOpacity}cursor:pointer" onclick="showCostDetail('${cfg.key}')">
-      <div class="cost-header"><span class="cost-name">${logoHtml}${cfg.label}${statusBadge}</span></div>
-      <div class="cost-rows">${subRow}${apiRow}${infraRow}${creditRow}</div>
-      ${totalRow}
-      ${billingInfo}
-      ${manualBtn}
-      ${noteText}
-      <a class="cost-link" href="${cfg.dashboard}" target="_blank">↗ 대시보드</a>
-    </div>`;
-  }).join('');
+    buckets[sectionOf(cfg)].push(`<div class="cost-card" style="${cardOpacity}cursor:pointer" onclick="showCostDetail('${cfg.key}')">
+      <div class="cost-body">
+        <div class="cost-header"><span class="cost-name">${logoHtml}${cfg.label}${statusBadge}</span></div>
+        <div class="cost-rows">${subRow}${apiRow}${infraRow}${creditRow}</div>
+        ${totalRow}
+        ${roiBox(cfg, subUsd)}
+        ${manualBtn}
+        ${noteText}
+      </div>
+      <div class="cost-foot">
+        ${billingInfo}
+        <a class="cost-link" href="${cfg.dashboard}" target="_blank" onclick="event.stopPropagation()">↗ 대시보드</a>
+      </div>
+    </div>`);
+  });
 
-  grid.innerHTML = cards;
+  const setGrid = (id, arr) => { const el = document.getElementById(id); if (el) el.innerHTML = arr.join('') || '<div style="color:#475569;font-size:.75rem;padding:12px">없음</div>'; };
+  setGrid('cost-grid-sub', buckets.sub);
+  setGrid('cost-grid-api', buckets.api);
+  setGrid('cost-grid-infra', buckets.infra);
+  const toggleSec = (labelId, arr) => { const el = document.getElementById(labelId); if (el) el.style.display = arr.length ? '' : 'none'; };
+  toggleSec('sec-api-label', buckets.api);
+  toggleSec('sec-infra-label', buckets.infra);
 
   // 총합계 업데이트
   const grand = sumSub + sumApi + sumInfra;
   document.getElementById('sum-sub').textContent = `$${sumSub.toFixed(2)}`;
   document.getElementById('sum-api').textContent = sumApi > 0 ? `$${sumApi.toFixed(2)}` : '—';
   document.getElementById('sum-infra').textContent = `$${sumInfra.toFixed(2)}`;
-  document.getElementById('sum-grand').textContent = `총 $${grand.toFixed(2)}/월`;
+  document.getElementById('sum-grand').textContent = `총 $${grand.toFixed(2)}/월 · ${won(grand)}`;
+
+  // 구독 활용도(ROI) 요약 — 실사용 API 환산가치 vs 구독료
+  const roiEl = document.getElementById('sum-roi');
+  if (roiEl) {
+    let equivTot = 0, covered = 0;
+    if (roiData && roiData.subscriptions) {
+      COST_CONFIG.forEach(cfg => {
+        const r = roiData.subscriptions[cfg.key];
+        if (r && r.api_equiv_usd != null && (cfg.sub > 0)) { equivTot += r.api_equiv_usd; covered += cfg.sub; }
+      });
+    }
+    if (equivTot > 0 && covered > 0) {
+      const eff = Math.round(equivTot / covered * 100);
+      const over = eff >= 100;
+      roiEl.style.display = '';
+      roiEl.innerHTML = `💡 실사용 효율 · 구독 $${covered.toFixed(0)} → API환산 <b class="${over ? '' : 'roi-under'}">$${equivTot.toFixed(0)}</b> = <b class="${over ? '' : 'roi-under'}">${eff}%</b> ${over ? '(본전 초과 🟢)' : '(더 써도 됨 🟡)'} <span style="color:#475569">· 실측 대상 구독만</span>`;
+    } else {
+      roiEl.style.display = 'none';
+    }
+  }
+
   const mo = workerData && workerData._month ? workerData._month : new Date().toISOString().slice(0,7);
-  document.getElementById('sum-note').textContent = `${mo} 기준 · DeepSeek/OpenAI 자동조회 · 나머지 수동`;
+  const roiTag = (roiData && roiData._sample) ? ' · ROI 샘플(수집 스크립트 연결 시 실측)' : '';
+  document.getElementById('sum-note').textContent = `${mo} 기준 · DeepSeek/OpenAI 자동조회 · 나머지 수동${roiTag}`;
 }
 
 function promptManual(key, label) {
@@ -840,9 +968,21 @@ load();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// LLM 사용량 그래프
-let usageChart;
+// LLM 사용량 그래프 (토큰/비용 토글 + 모델믹스 도넛)
+let usageChart, usageDonut;
+let usageRaw = null;
+let usageMode = 'tokens'; // 'tokens' | 'cost'
 const visibleDatasets = new Set();
+
+function fmtTokens(v){ return v >= 1e6 ? (v/1e6).toFixed(1)+'M' : (v/1e3).toFixed(0)+'K'; }
+function fmtUsd(v){ return v >= 1000 ? '$'+(v/1000).toFixed(1)+'k' : '$'+v.toFixed(v<10?2:0); }
+function toDisplay(ds){
+  if (usageMode === 'cost') {
+    const per = ds.blendedPer1M || 6; // $/1M (서버 제공 혼합단가)
+    return (ds.data||[]).map(t => Math.round((t||0) * per / 1e6 * 100)/100);
+  }
+  return ds.data || [];
+}
 
 async function loadLocalLLM() {
   // KV에서 ollama_stats 읽기
@@ -909,68 +1049,79 @@ async function loadLocalLLM() {
 async function loadUsageChart() {
   try {
     const r = await fetch('/api/usage-chart');
-    const data = await r.json();
-    
-    // 범례 생성
-    const legendHtml = data.datasets.map((ds, idx) => {
-      visibleDatasets.add(idx);
-      return `<div onclick="toggleDataset(${idx})" style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:#0f172a;border-radius:20px;cursor:pointer;border:2px solid transparent;transition:.15s" data-idx="${idx}" class="legend-item active" id="legend-${idx}">
-        <div style="width:10px;height:10px;border-radius:50%;background:${ds.backgroundColor}"></div>
-        <span style="font-size:.72rem;color:#e2e8f0">${ds.label}</span>
-      </div>`;
-    }).join('');
-    document.getElementById('usage-legend').innerHTML = legendHtml;
-    
-    // Chart.js
-    const numDays = data.labels ? data.labels.length : 14;
-    const minWidth = Math.max(600, numDays * 40);
-    document.getElementById('usageChart').style.minWidth = minWidth + 'px';
-    const ctx = document.getElementById('usageChart').getContext('2d');
-    usageChart = new Chart(ctx, {
-      type: 'line',
-      data: data,
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#1e293b',
-            borderColor: '#4ade80',
-            borderWidth: 1,
-            titleColor: '#e2e8f0',
-            bodyColor: '#94a3b8',
-            callbacks: {
-              label: ctx => { const v = ctx.parsed.y; return v >= 1e6 ? `${ctx.dataset.label}: ${(v/1e6).toFixed(2)}M tokens` : `${ctx.dataset.label}: ${(v/1e3).toFixed(1)}K tokens`; }
-            }
-          }
-        },
-        scales: {
-          x: {
-            stacked: true,
-            grid: { color: 'rgba(148,163,184,0.1)' },
-            ticks: { color: '#94a3b8', font: { size: 10 } }
-          },
-          y: {
-            stacked: true,
-            grid: { color: 'rgba(148,163,184,0.1)' },
-            ticks: {
-              color: '#94a3b8',
-              font: { size: 10 },
-              callback: v => v >= 1e6 ? `${(v/1e6).toFixed(1)}M` : `${(v/1e3).toFixed(0)}K`
-            }
-          }
-        },
-        elements: {
-          line: { tension: 0.3 },
-          point: { radius: 0 }
+    usageRaw = await r.json();
+    (usageRaw.datasets||[]).forEach((_, i) => visibleDatasets.add(i)); // 최초 전체 표시
+    renderUsage();
+  } catch (e) { console.error('사용량 그래프 로드 실패:', e); }
+}
+
+function setUsageMode(mode) {
+  if (mode === usageMode || !usageRaw) return;
+  usageMode = mode;
+  document.querySelectorAll('#usage-mode-toggle .um-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  renderUsage();
+}
+
+function renderUsage() {
+  if (!usageRaw) return;
+  const data = usageRaw;
+  const dispSets = data.datasets.map(ds => ({ ...ds, data: toDisplay(ds) }));
+
+  // 범례 (토글 상태 유지)
+  document.getElementById('usage-legend').innerHTML = data.datasets.map((ds, idx) => {
+    const on = visibleDatasets.has(idx);
+    return `<div onclick="toggleDataset(${idx})" style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:#0f172a;border-radius:20px;cursor:pointer;border:2px solid transparent;transition:.15s;opacity:${on?1:0.4}" data-idx="${idx}" class="legend-item ${on?'active':''}" id="legend-${idx}">
+      <div style="width:10px;height:10px;border-radius:50%;background:${ds.backgroundColor}"></div>
+      <span style="font-size:.72rem;color:#e2e8f0">${ds.label}</span>
+    </div>`;
+  }).join('');
+
+  const numDays = data.labels ? data.labels.length : 30;
+  document.getElementById('usageChart').style.minWidth = Math.max(600, numDays * 34) + 'px';
+  const yFmt = v => usageMode === 'cost' ? fmtUsd(v) : fmtTokens(v);
+
+  if (usageChart) usageChart.destroy();
+  usageChart = new Chart(document.getElementById('usageChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: data.labels, datasets: dispSets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b', borderColor: '#4ade80', borderWidth: 1,
+          titleColor: '#e2e8f0', bodyColor: '#94a3b8',
+          callbacks: { label: c => usageMode === 'cost' ? `${c.dataset.label}: ${fmtUsd(c.parsed.y)} (추정)` : `${c.dataset.label}: ${fmtTokens(c.parsed.y)} tokens` }
         }
+      },
+      scales: {
+        x: { stacked: true, grid: { color: 'rgba(148,163,184,0.1)' }, ticks: { color: '#94a3b8', font: { size: 10 }, autoSkip: true, maxTicksLimit: 12, maxRotation: 0, minRotation: 0 } },
+        y: { stacked: true, grid: { color: 'rgba(148,163,184,0.1)' }, ticks: { color: '#94a3b8', font: { size: 10 }, callback: yFmt } }
+      },
+      elements: { line: { tension: 0.3 }, point: { radius: 0 } }
+    }
+  });
+  data.datasets.forEach((ds, idx) => { if (!visibleDatasets.has(idx)) usageChart.setDatasetVisibility(idx, false); });
+  usageChart.update();
+  requestAnimationFrame(() => { const sc = document.getElementById('usageChart-scroll'); if (sc) sc.scrollLeft = sc.scrollWidth; });
+
+  // 모델 믹스 도넛 (30일 합계)
+  const totals = dispSets.map(ds => (ds.data||[]).reduce((a,b)=>a+(b||0),0));
+  const grand = totals.reduce((a,b)=>a+b,0);
+  if (usageDonut) usageDonut.destroy();
+  usageDonut = new Chart(document.getElementById('usageDonut').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: data.datasets.map(d=>d.label), datasets: [{ data: totals, backgroundColor: data.datasets.map(d=>d.backgroundColor), borderColor: '#0f172a', borderWidth: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#1e293b', callbacks: { label: c => { const pct = grand ? Math.round(c.parsed/grand*100) : 0; return `${c.label}: ${usageMode==='cost'?fmtUsd(c.parsed):fmtTokens(c.parsed)} (${pct}%)`; } } }
       }
-    });
-  } catch (e) {
-    console.error('사용량 그래프 로드 실패:', e);
-  }
+    }
+  });
+  document.getElementById('usage-donut-total').textContent = usageMode === 'cost' ? `합계 ${fmtUsd(grand)} (추정)` : `합계 ${fmtTokens(grand)} tokens`;
 }
 
 function toggleDataset(idx) {
@@ -1024,7 +1175,7 @@ async function loadSourceAnalysis() {
           <div style="font-size:.65rem;color:#475569">${tokStr} · ${s.sessions}세션 · top: ${s.top_model}</div>
         </div>
       </div>
-      <div style="font-size:.65rem;color:#334155;padding:0 8px 4px;margin-top:-4px">${modelBreakdown}</div>`;
+      <div style="font-size:.65rem;color:#64748b;padding:0 8px 4px;margin-top:-4px">${modelBreakdown}</div>`;
     }).join('');
 
     document.getElementById('source-analysis').innerHTML = html ||
