@@ -71,9 +71,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 /* API 비용 카드 */
 .cost-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:0 28px 20px}
 @media(min-width:640px){.cost-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
-.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:12px;transition:border-color .15s}
+.cost-card{background:#1e293b;border:1px solid #1e3a5f;border-radius:12px;padding:12px;transition:border-color .15s;display:flex;flex-direction:column;height:100%}
 @media(min-width:640px){.cost-card{padding:16px}}
 .cost-card:hover{border-color:#4ade80}
+/* 카드 본문(가변) + 하단 결제/링크(고정 정렬) */
+.cost-body{display:flex;flex-direction:column;flex:1 1 auto}
+.cost-foot{margin-top:auto;padding-top:10px;border-top:1px solid #16233a;display:flex;flex-direction:column;gap:8px}
 .toggle-vis:hover{border-color:#6b7280;color:#94a3b8}
 .toggle-vis.visible{border-color:#1d4ed8;color:#60a5fa}
 
@@ -87,24 +90,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 
 /* 오너뷰 토글 버튼 */
 .cost-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.cost-name{font-size:.85rem;font-weight:700;color:#f1f5f9}
-.cost-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.cost-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;background:#0f172a}
-.cost-row-label{font-size:.72rem;color:#64748b;display:flex;align-items:center;gap:5px}
-.cost-badge{font-size:.62rem;padding:1px 6px;border-radius:99px;font-weight:700}
+.cost-name{font-size:.85rem;font-weight:700;color:#f1f5f9;display:flex;align-items:center;min-width:0}
+.cost-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.cost-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:6px;background:#0f172a}
+.cost-row-label{font-size:.72rem;color:#64748b;display:flex;align-items:center;gap:5px;min-width:0;flex:1 1 auto}
+.cost-badge{font-size:.62rem;padding:2px 7px;border-radius:99px;font-weight:700;white-space:nowrap;flex-shrink:0;line-height:1.4}
 .badge-api{background:#1e3a5f;color:#60a5fa}
 .badge-sub{background:#1a2e1a;color:#4ade80}
 .badge-infra{background:#2d1f3d;color:#a78bfa}
-.cost-row-val{font-size:.85rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums}
+.cost-row-val{font-size:.85rem;font-weight:700;color:#f1f5f9;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap}
 .cost-row-val.loading{color:#475569}
 .cost-row-val.manual{color:#f59e0b}
 .cost-divider{border:none;border-top:1px solid #1e3a5f;margin:8px 0}
 .cost-total-row{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
 .cost-total-label{font-size:.72rem;color:#94a3b8;font-weight:600}
 .cost-total-val{font-size:1rem;font-weight:800;color:#4ade80;font-variant-numeric:tabular-nums}
-.cost-link{font-size:.68rem;color:#3b82f6;text-decoration:none;display:block;margin-top:8px;text-align:right}
+.cost-link{font-size:.68rem;color:#3b82f6;text-decoration:none;display:block;margin-top:0;text-align:right}
 .cost-link:hover{color:#60a5fa}
-.cost-manual-btn{font-size:.65rem;color:#f59e0b;background:none;border:1px solid #78350f;border-radius:4px;padding:2px 8px;cursor:pointer}
+.cost-manual-btn{font-size:.65rem;color:#f59e0b;background:none;border:1px solid #78350f;border-radius:4px;padding:3px 9px;cursor:pointer;align-self:flex-start;margin-top:2px;transition:.15s}
+.cost-manual-btn:hover{background:#78350f22;border-color:#b45309}
 .cost-total-summary{background:#0f172a;border:1px solid #22c55e;border-radius:12px;padding:16px 20px;margin:0 28px 16px}
 .cts-title{font-size:.7rem;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
 .cts-rows{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:10px}
@@ -282,84 +286,84 @@ function applyOwnerView() {
 // ── AI 비용 로드 ──────────────────────────────────────────
 const COST_CONFIG = [
   // ── Anthropic ── 구독 + API 통합 카드
-  { key:'anthropic', label:'Anthropic Claude', logo:'/favicons/anthropic.ico',
+  { key:'anthropic', label:'Anthropic Claude', logo:'/anthropic.svg',
     sub:258, subName:'Claude Max 20x (₩375,000/월)', apiAuto:true,
     dashboard:'https://console.anthropic.com/settings/usage',
     note:'구독 ₩375,000 + API 종량제 ($500 한도)', cycle:'매월 31일/매월 1일 리셋',
     card:'hyundaiPurple', billingDay:31, billingType:'monthly' },
   // ── OpenAI ── 구독 + API 통합 카드
-  { key:'openai', label:'OpenAI ChatGPT', logo:'/favicons/openai.ico',
+  { key:'openai', label:'OpenAI ChatGPT', logo:'/openai.svg',
     sub:200, subName:'ChatGPT Pro $200/월', apiAuto:false,
     dashboard:'https://platform.openai.com/settings/organization/billing',
     note:'구독 $200 + API 잔액 $92.13', cycle:'매월 17일',
     card:'hyundaiPurple', billingDay:17, billingType:'monthly' },
   // ── xAI Grok ──
-  { key:'grok', label:'Grok / SuperGrok', logo:'/favicons/xai.ico',
+  { key:'grok', label:'Grok / SuperGrok', logo:'/xai.svg',
     sub:30.30, subName:'SuperGrok 월간 ₩44,000', apiAuto:false,
     dashboard:'https://grok.com',
     note:'App Store 매월 9일 갱신', cycle:'매월 9일',
     card:'hyundaiPurple', billingDay:9, billingType:'monthly' },
-  { key:'xai_api', label:'xAI API (Grok)', logo:'/favicons/xai.ico',
+  { key:'xai_api', label:'xAI API (Grok)', logo:'/xai.svg',
     sub:0, subName:'Pay-as-you-go', apiAuto:true,
     dashboard:'https://console.x.ai/team/9839c7f2-bfec-4f02-965b-1ce6e6cfa926/billing',
     note:'크레딧 $20 충전 (2026-06-30). Grok-3-mini $0.30/1M', cycle:'사용량 기반',
     card:'hyundaiPurple', billingDay:null, billingType:'usage' },
   // ── Google Gemini ──
-  { key:'gemini', label:'Google Gemini', logo:'/favicons/google.ico',
+  { key:'gemini', label:'Google Gemini', logo:'/gemini.svg',
     sub:20, subName:'Google One AI Premium $20/월', apiAuto:false,
     dashboard:'https://console.cloud.google.com/billing',
     note:'API 사용량 별도 청구', cycle:'매월 1일',
     card:'hyundaiPurple', billingDay:1, billingType:'monthly' },
   // ── Perplexity ──
-  { key:'perplexity', label:'Perplexity Pro', logo:'/favicons/perplexity.ico',
+  { key:'perplexity', label:'Perplexity Pro', logo:'/perplexity.svg',
     sub:20, subName:'Perplexity Pro $20/월', apiAuto:false,
     dashboard:'https://www.perplexity.ai/settings/api',
     note:'연간 $200 결제', cycle:'연간 (12월)',
     card:'unknown', billingDay:null, billingType:'annual' },
   // ── ElevenLabs ──
-  { key:'elevenlabs', label:'ElevenLabs', logo:'/favicons/elevenlabs.ico',
+  { key:'elevenlabs', label:'ElevenLabs', logo:'/elevenlabs.svg',
     sub:22, subName:'Creator 연간 $220/년 (월환산 $22)', apiAuto:false,
     dashboard:'https://elevenlabs.io/app/subscription',
     note:'TTS — 100k 크레딧/월 · 갱신 2026-09-05', cycle:'2026-09-05',
     card:'hyundaiPurple', billingDay:5, billingType:'annual', nextDate:'2026-09-05' },
   // ── Higgsfield ──
-  { key:'higgsfield', label:'Higgsfield', logo:'/favicons/higgsfield.ico',
+  { key:'higgsfield', label:'Higgsfield', logo:'/higgsfield.svg',
     sub:32.34, subName:'Ultimate 연간 $388/년 (월환산 $32.34)', apiAuto:false,
     dashboard:'https://higgsfield.ai/me/settings/subscription',
     note:'13개 모델 Unlimited · 1,200크레딧/월 · 갱신 2027-03-20', cycle:'2027-03-20',
     card:'hyundaiPurple', billingDay:20, billingType:'annual', nextDate:'2027-03-20' },
   // ── Suno ──
-  { key:'suno', label:'Suno AI', logo:'/favicons/suno.ico',
+  { key:'suno', label:'Suno AI', logo:'/suno.svg',
     sub:9.65, subName:'Pro Plan ₩14,000/월', apiAuto:false,
     dashboard:'https://suno.com/account',
     note:'AI 음악생성 — 매월 1일 갱신', cycle:'매월 1일',
     card:'hyundaiPurple', billingDay:1, billingType:'monthly' },
   // ── DeepSeek ──
-  { key:'deepseek', label:'DeepSeek', logo:'/favicons/deepseek.ico',
+  { key:'deepseek', label:'DeepSeek', logo:'/deepseek.svg',
     sub:0, subName:null, apiAuto:true,
     dashboard:'https://platform.deepseek.com/usage',
     note:'충전식 선불 — 잔액 $49.57', cycle:'충전식',
     card:null, billingDay:null, billingType:'prepaid' },
   // ── Manus ──
-  { key:'manus', label:'Manus Pro', logo:'/manus.png',
+  { key:'manus', label:'Manus Pro', logo:'/manus.svg',
     sub:0, subName:'Manus Pro 연간', apiAuto:false,
     dashboard:'https://manus.im/app#settings/usage',
     note:'크레딧제 — 잔여 76,751 / 85,000', creditTotal:85000, creditUsed:8249, cycle:'2027-01-29',
     card:'unknown', billingDay:29, billingType:'annual', nextDate:'2027-01-29' },
   // ── Cloudflare ──
-  { key:'cloudflare', label:'Cloudflare', logo:'/favicons/cloudflare.ico',
+  { key:'cloudflare', label:'Cloudflare', logo:'/cloudflare.png',
     sub:0, subName:null, apiAuto:false,
     dashboard:'https://dash.cloudflare.com', isInfra:true,
     note:'Free Tier — Pages/Workers/D1', cycle:'무료', isActive:true,
     card:null, billingType:'free' },
   // ── Railway ──
-  { key:'railway', label:'Railway', logo:'/railway.png',
+  { key:'railway', label:'Railway', logo:'/railway.svg',
     sub:0, subName:'서버 호스팅', isInfra:true,
     dashboard:'https://railway.app/dashboard',
     note:'Trial 크레딧 잔액', cycle:'무료', isActive:false,
     card:null, billingType:'free' },
   // ── Vercel ──
-  { key:'vercel', label:'Vercel', logo:'/vercel.png',
+  { key:'vercel', label:'Vercel', logo:'/vercel.svg',
     sub:0, subName:null, apiAuto:false,
     dashboard:'https://vercel.com/dashboard', isInfra:true,
     note:'Hobby 무료', cycle:'무료', isActive:true,
@@ -512,11 +516,11 @@ async function loadAiCosts() {
       </div>` : '';
 
     const manualBtn = (cfg.apiAuto === false && !cfg.isInfra && cfg.key !== 'perplexity') ? `
-      <button class="cost-manual-btn" onclick="promptManual('${cfg.key}','${cfg.label}')">✏️ 직접입력</button>` : '';
+      <button class="cost-manual-btn" onclick="event.stopPropagation();promptManual('${cfg.key}','${cfg.label}')">✏️ 직접입력</button>` : '';
 
-    const noteText = cfg.note ? `<div style="font-size:.65rem;color:#334155;margin-top:4px">${cfg.note}</div>` : '';
+    const noteText = cfg.note ? `<div style="font-size:.65rem;color:#64748b;line-height:1.45;margin-top:6px">${cfg.note}</div>` : '';
 
-    const logoHtml = cfg.logo ? `<img src="${cfg.logo}" style="width:20px;height:20px;border-radius:4px;margin-right:6px;vertical-align:middle" onerror="this.style.display='none'">` : (cfg.emoji || '');
+    const logoHtml = cfg.logo ? `<img src="${cfg.logo}" alt="" width="22" height="22" style="width:22px;height:22px;border-radius:5px;margin-right:7px;vertical-align:middle;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">` : (cfg.emoji || '');
     const statusBadge = cfg.isActive === false ? `<span style="font-size:.6rem;padding:2px 8px;border-radius:12px;background:#374151;color:#9ca3af;margin-left:6px">사용 안함</span>` : '';
 
     // 미니 카드 + 결제 정보
@@ -532,7 +536,7 @@ async function loadAiCosts() {
           return next.toLocaleDateString('ko-KR',{month:'short',day:'numeric'});
         })() : null;
       billingInfo = `
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+      <div style="display:flex;align-items:center;gap:8px">
         <div style="width:48px;height:30px;border-radius:5px;background:${cs.bg};border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;justify-content:center;padding:0 5px;flex-shrink:0;position:relative;overflow:hidden">
           <div style="position:absolute;right:3px;top:3px;width:8px;height:6px;border-radius:50%;background:${cs.chip};opacity:.8"></div>
           <div style="font-size:.42rem;color:rgba(255,255,255,.5);line-height:1">💳</div>
@@ -544,20 +548,24 @@ async function loadAiCosts() {
         </div>
       </div>`;
     } else if (cfg.billingType === 'free') {
-      billingInfo = `<div style="font-size:.58rem;color:#22c55e;margin-top:5px">🆓 무료</div>`;
+      billingInfo = `<div style="font-size:.62rem;color:#22c55e">🆓 무료</div>`;
     } else if (cfg.billingType === 'prepaid') {
-      billingInfo = `<div style="font-size:.58rem;color:#f59e0b;margin-top:5px">💰 충전식 선불</div>`;
+      billingInfo = `<div style="font-size:.62rem;color:#f59e0b">💰 충전식 선불</div>`;
     }
 
     const cardOpacity = cfg.isActive === false ? 'opacity:0.6;' : '';
     return `<div class="cost-card" style="${cardOpacity}cursor:pointer" onclick="showCostDetail('${cfg.key}')">
-      <div class="cost-header"><span class="cost-name">${logoHtml}${cfg.label}${statusBadge}</span></div>
-      <div class="cost-rows">${subRow}${apiRow}${infraRow}${creditRow}</div>
-      ${totalRow}
-      ${billingInfo}
-      ${manualBtn}
-      ${noteText}
-      <a class="cost-link" href="${cfg.dashboard}" target="_blank">↗ 대시보드</a>
+      <div class="cost-body">
+        <div class="cost-header"><span class="cost-name">${logoHtml}${cfg.label}${statusBadge}</span></div>
+        <div class="cost-rows">${subRow}${apiRow}${infraRow}${creditRow}</div>
+        ${totalRow}
+        ${manualBtn}
+        ${noteText}
+      </div>
+      <div class="cost-foot">
+        ${billingInfo}
+        <a class="cost-link" href="${cfg.dashboard}" target="_blank" onclick="event.stopPropagation()">↗ 대시보드</a>
+      </div>
     </div>`;
   }).join('');
 
