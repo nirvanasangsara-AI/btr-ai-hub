@@ -13,6 +13,13 @@ export async function onRequestGet({ env, request }) {
     return new Response(raw, { headers: cors });
   }
 
+  // 구독 활용도(ROI) — 실사용 토큰의 API 환산가치 vs 구독료
+  if (url.searchParams.get('type') === 'roi') {
+    const raw = await env.HUB_CONFIG.get('usage_roi');
+    if (raw) return new Response(raw, { headers: cors });
+    return new Response(JSON.stringify(buildRoiSample()), { headers: cors });
+  }
+
   const today = kstToday();
 
   // KV에서 사용량 데이터 읽기
@@ -22,7 +29,7 @@ export async function onRequestGet({ env, request }) {
       const d = JSON.parse(raw);
       // 오늘 기준 30일 롤링 윈도우로 재정렬 + 색상 보정 + 모델순 정렬
       const windowed = rewindowTo30Days(d, today);
-      windowed.datasets = ensureColors(sortDatasets(windowed.datasets));
+      windowed.datasets = attachPricing(ensureColors(sortDatasets(windowed.datasets)));
       return new Response(JSON.stringify(windowed), { headers: cors });
     } catch(e) {
       return new Response(raw, { headers: cors });
@@ -32,7 +39,7 @@ export async function onRequestGet({ env, request }) {
   // 샘플 데이터 (실제론 Hermes 트래킹 스크립트가 KV에 푸시)
   // KV가 비어있을 때만 사용 — 오늘 기준 30일 롤링, 사용 모델 전체를 리본으로 표현
   const sample = buildSample(today);
-  sample.datasets = ensureColors(sortDatasets(sample.datasets));
+  sample.datasets = attachPricing(ensureColors(sortDatasets(sample.datasets)));
   return new Response(JSON.stringify(sample), { headers: cors });
 }
 
@@ -178,4 +185,54 @@ function buildSample(today) {
     return { label: m.label, data, fill: true };
   });
   return { labels, datasets, _window: '30d', _today: mmdd(today), _sample: true };
+}
+
+// ── 모델 단가 (USD / 1M 토큰) — 비용축 토글·ROI 환산용 ──────
+// in/out + 혼합단가(에이전트 사용 가정: 입력 0.7 · 출력 0.3 가중)
+const MODEL_PRICE = {
+  'opus':     { in: 5,    out: 25 },
+  'sonnet':   { in: 3,    out: 15 },
+  'haiku':    { in: 1,    out: 5 },
+  'gpt':      { in: 1.25, out: 10 },
+  'o1':       { in: 15,   out: 60 },
+  'o3':       { in: 2,    out: 8 },
+  'gemini':   { in: 1.25, out: 10 },
+  'grok':     { in: 3,    out: 15 },
+  'deepseek': { in: 0.27, out: 1.10 },
+  'perplexity': { in: 1, out: 1 },
+};
+function priceFor(label) {
+  const l = (label || '').toLowerCase();
+  for (const [k, p] of Object.entries(MODEL_PRICE)) if (l.includes(k)) return p;
+  return { in: 3, out: 15 };
+}
+function blendedPer1M(label) {
+  const p = priceFor(label);
+  return Math.round((p.in * 0.7 + p.out * 0.3) * 100) / 100;
+}
+// 각 데이터셋에 혼합단가($/1M)를 붙여 프론트에서 토큰→비용 환산 가능
+function attachPricing(datasets) {
+  return datasets.map(ds => ({ ...ds, blendedPer1M: blendedPer1M(ds.label) }));
+}
+
+// ── ROI 샘플 (KV usage_roi 비었을 때) — 구독별 API 환산가치 ──
+function buildRoiSample() {
+  // tokens: {in, out} 이달 실사용(데모). api_equiv_usd는 서버에서 계산.
+  const rows = [
+    { key: 'anthropic', model: 'Opus 4.8',  in: 42_000_000, out: 7_800_000, cache_read: 120_000_000 },
+    { key: 'openai',    model: 'GPT-5',     in: 5_200_000,  out: 900_000,   cache_read: 0 },
+    { key: 'gemini',    model: 'Gemini 2.5', in: 3_100_000, out: 620_000,   cache_read: 0 },
+  ];
+  const subscriptions = {};
+  for (const r of rows) {
+    const p = priceFor(r.model);
+    // 캐시 읽기는 입력가의 ~0.1배로 환산
+    const api_equiv_usd = (r.in / 1e6) * p.in + (r.out / 1e6) * p.out + (r.cache_read / 1e6) * p.in * 0.1;
+    subscriptions[r.key] = {
+      tokens_in: r.in, tokens_out: r.out, cache_read: r.cache_read,
+      top_model: r.model,
+      api_equiv_usd: Math.round(api_equiv_usd * 100) / 100,
+    };
+  }
+  return { subscriptions, month: null, updated: null, _sample: true };
 }
