@@ -158,7 +158,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 
 <!-- LLM 사용량 그래프 -->
 <div class="section" style="margin-top:20px">
-  <div class="section-label">📊 LLM 사용량 — 모델별·시계열</div>
+  <div class="section-label">📊 LLM 사용량 — 모델별 리본 · 최근 30일 (오늘 기준)</div>
 </div>
 <div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px">
   <div id="usageChart-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -168,7 +168,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard',sans-serif;backgr
 </div>
 
 <!-- 작업유형별 비용 분석 -->
-<div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px">
+<div style="background:#1e293b;border:1px solid#1e3a5f;border-radius:12px;margin:0 14px 20px;padding:16px;max-width:460px">
   <div style="font-size:.75rem;color:#64748b;font-weight:600;letter-spacing:.05em;margin-bottom:12px">⚙️ 작업유형별 비용 분석 (최근 30일)</div>
   <div id="source-analysis" style="display:grid;gap:8px">
     <div style="color:#475569;font-size:.8rem">로딩 중…</div>
@@ -838,8 +838,8 @@ async function loadUsageChart() {
     document.getElementById('usage-legend').innerHTML = legendHtml;
     
     // Chart.js
-    const numDays = data.labels ? data.labels.length : 14;
-    const minWidth = Math.max(600, numDays * 40);
+    const numDays = data.labels ? data.labels.length : 30;
+    const minWidth = Math.max(600, numDays * 34);
     document.getElementById('usageChart').style.minWidth = minWidth + 'px';
     const ctx = document.getElementById('usageChart').getContext('2d');
     usageChart = new Chart(ctx, {
@@ -866,7 +866,7 @@ async function loadUsageChart() {
           x: {
             stacked: true,
             grid: { color: 'rgba(148,163,184,0.1)' },
-            ticks: { color: '#94a3b8', font: { size: 10 } }
+            ticks: { color: '#94a3b8', font: { size: 10 }, autoSkip: true, maxTicksLimit: 12, maxRotation: 0, minRotation: 0 }
           },
           y: {
             stacked: true,
@@ -883,6 +883,11 @@ async function loadUsageChart() {
           point: { radius: 0 }
         }
       }
+    });
+    // 최근(오른쪽) 날짜가 먼저 보이도록 스크롤
+    requestAnimationFrame(() => {
+      const sc = document.getElementById('usageChart-scroll');
+      if (sc) sc.scrollLeft = sc.scrollWidth;
     });
   } catch (e) {
     console.error('사용량 그래프 로드 실패:', e);
@@ -940,7 +945,7 @@ async function loadSourceAnalysis() {
           <div style="font-size:.65rem;color:#475569">${tokStr} · ${s.sessions}세션 · top: ${s.top_model}</div>
         </div>
       </div>
-      <div style="font-size:.65rem;color:#334155;padding:0 8px 4px;margin-top:-4px">${modelBreakdown}</div>`;
+      <div style="font-size:.65rem;color:#64748b;padding:0 8px 4px;margin-top:-4px">${modelBreakdown}</div>`;
     }).join('');
 
     document.getElementById('source-analysis').innerHTML = html ||
